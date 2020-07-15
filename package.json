@@ -11,7 +11,7 @@
   "dependencies": {
     "@types/styled-components": "^5.1.1",
     "@zeit/next-workers": "^1.0.0",
-    "faunadb": "^2.14.2",
+    "mongodb": "^3.5.9",
     "next": "9.4.4",
     "react": "16.13.1",
     "react-dom": "16.13.1",
@@ -20,6 +20,7 @@
     "worker-loader": "^2.0.0"
   },
   "devDependencies": {
+    "@types/mongodb": "^3.5.25",
     "@types/node": "^14.0.23",
     "@types/react": "^16.9.43",
     "@types/web-push": "^3.3.0",
