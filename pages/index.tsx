@@ -80,7 +80,6 @@ async function endSub(subscription: PushSubscription): Promise<boolean> {
 }
 
 export default function Index(): ReactElement {
-    const [status, setStatus] = useState<string | null>(null);
     const [start, setStart] = useState(true);
     const [end, setEnd] = useState(true);
 
@@ -95,6 +94,24 @@ export default function Index(): ReactElement {
         window.localStorage.setItem("start", start.toString());
         window.localStorage.setItem("end", end.toString());
     }, [start, end]);
+
+    const [status, setStatus] = useState("");
+
+    useEffect(() => {
+        if (sw === null) {
+            setStatus("Loading Service Worker...");
+            return;
+        }
+        setStatus("Loading subscription...");
+        sw.pushManager.getSubscription().then(async (sub) => {
+            if (!sub) {
+                setStatus("No subscription found.");
+                return;
+            }
+            setStatus("Subscription Found.");
+        });
+    }, [sw]);
+
 
     const subscribe = async () => {
         setStatus("Working...");
