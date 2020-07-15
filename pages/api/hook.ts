@@ -33,6 +33,9 @@ const Hook: NextApiHandler = async (req, res) => {
                             badge: "https://zoom-notifier.jdkula.dev/started.png",
                             icon: "https://zoom-notifier.jdkula.dev/icon.png",
                             body: "Tap/click to join!",
+                            data: {
+                                url: process.env.MEETING_URL,
+                            },
                         },
                         renotify: true,
                         tag: "started",
@@ -46,6 +49,7 @@ const Hook: NextApiHandler = async (req, res) => {
                         options: {
                             badge: "https://zoom-notifier.jdkula.dev/ended.png",
                             icon: "https://zoom-notifier.jdkula.dev/icon.png",
+                            data: {},
                         },
                         renotify: true,
                         tag: "ended",
