@@ -2,9 +2,13 @@ import { NextApiHandler } from "next";
 import mongo from "~/lib/mongo";
 import Subscription from "~/lib/subscription";
 
-const Push: NextApiHandler<Subscription> = async (req, res) => {
+const Sub: NextApiHandler<Subscription> = async (req, res) => {
+    if (req.method !== "POST") {
+        res.status(400).end();
+        return;
+    }
     const record = {
-        _id: req.body.subscription.endpoint,
+        _id: req.body.email,
         ...req.body,
     };
     const db = await mongo;
@@ -13,4 +17,4 @@ const Push: NextApiHandler<Subscription> = async (req, res) => {
     res.send(record);
 };
 
-export default Push;
+export default Sub;

@@ -1,8 +1,20 @@
-import { ReactElement, useEffect, useState } from "react";
+import React, { ReactElement, useEffect, useState } from "react";
 import Head from "next/head";
 import styled, { createGlobalStyle } from "styled-components";
-import Status from "~/components/Status";
-import useServiceWorker from "~/lib/useServiceWorker";
+import {
+    Button,
+    Checkbox,
+    FormControl,
+    FormControlLabel,
+    InputLabel,
+    MenuItem,
+    Select,
+    TextField,
+} from "@material-ui/core";
+
+import { PhoneNumberUtil } from "google-libphonenumber";
+import Axios from "axios";
+const phoneUtil = PhoneNumberUtil.getInstance();
 
 const GlobalStyle = createGlobalStyle`
     html {
@@ -24,6 +36,7 @@ const GlobalStyle = createGlobalStyle`
         box-sizing: border-box;
     }
 `;
+
 const Page = styled.div`
     display: flex;
     flex-direction: row;
@@ -37,53 +50,37 @@ const Container = styled.div`
     box-shadow: 20px 20px 100px -20px rgba(0, 0, 0, 1);
 `;
 
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
-    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-
-    for (let i = 0; i < rawData.length; ++i) {
-        outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
-}
-
-async function sendSub(subscription: PushSubscription, onStart: boolean, onEnd: boolean): Promise<boolean> {
-    const body = JSON.stringify({ subscription, start: onStart, end: onEnd });
-
-    console.log(JSON.parse(body));
-
-    const reply = await fetch("/api/push", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body,
-    });
-    return reply.ok;
-}
-
-async function endSub(subscription: PushSubscription): Promise<boolean> {
-    const result = await fetch("/api/unsub", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            id: subscription.endpoint,
-        }),
-    });
-
-    return result.ok;
-}
+const CarrierSelect = styled(FormControl)`
+    min-width: 120px;
+`;
 
 export default function Index(): ReactElement {
+    const [email, setEmail] = useState("");
+    const [phone, setPhone] = useState("");
+    const [carrier, setCarrier] = useState("");
+
+    const [phoneValid, setPhoneValid] = useState(false);
+
+    useEffect(() => {
+        if (phone) {
+            setEmail(`${phone}@${carrier}`);
+        }
+    }, [phone, carrier]);
+
+    useEffect(() => {
+        if (phone === "") {
+            setPhoneValid(true);
+            return;
+        }
+        try {
+            setPhoneValid(phoneUtil.isValidNumberForRegion(phoneUtil.parse(phone, "US"), "US"));
+        } catch (e) {
+            setPhoneValid(false);
+        }
+    }, [phone]);
+
     const [start, setStart] = useState(true);
     const [end, setEnd] = useState(true);
-
-    const sw = useServiceWorker("/service.worker.js");
 
     useEffect(() => {
         setStart(window.localStorage.getItem("start") !== "false");
@@ -95,57 +92,16 @@ export default function Index(): ReactElement {
         window.localStorage.setItem("end", end.toString());
     }, [start, end]);
 
-    const [status, setStatus] = useState("");
-
-    useEffect(() => {
-        if (sw === null) {
-            setStatus("Loading Service Worker...");
-            return;
-        }
-        setStatus("Loading subscription...");
-        sw.pushManager.getSubscription().then(async (sub) => {
-            if (!sub) {
-                setStatus("No subscription found.");
-                return;
-            }
-            setStatus("Subscription Found.");
-        });
-    }, [sw]);
-
-
-    const subscribe = async () => {
-        setStatus("Working...");
-        Notification.requestPermission().then(async (auth) => {
-            if (auth !== "granted") {
-                setStatus("Permission denied.");
-                return;
-            }
-
-            let subscription = await sw.pushManager.getSubscription();
-            if (!subscription) {
-                const key = await (await fetch("/api/key")).text();
-                subscription = await sw.pushManager.subscribe({
-                    userVisibleOnly: true,
-                    applicationServerKey: urlBase64ToUint8Array(key),
-                });
-                await sendSub(subscription, start, end);
-                setStatus("Subscribed.");
-            } else {
-                await sendSub(subscription, start, end);
-                setStatus("Subscription updated.");
-            }
+    const subscribe = () => {
+        Axios.post("/api/sub", {
+            start,
+            end,
+            email,
         });
     };
 
-    const unsubscribe = async () => {
-        const subscription = await sw.pushManager.getSubscription();
-        if (!subscription) {
-            setStatus("No subscription to unsubscribe from.");
-        } else {
-            await endSub(subscription);
-            await subscription.unsubscribe();
-            setStatus("Unsubscribed.");
-        }
+    const unsubscribe = () => {
+        Axios.delete(`/api/sub/${email}`);
     };
 
     return (
@@ -161,20 +117,66 @@ export default function Index(): ReactElement {
             <GlobalStyle />
             <Container>
                 <div>
-                    <label>
-                        <input type="checkbox" checked={start} onChange={(e) => setStart(e.target.checked)} />
-                        Notify when the first person enters!
-                    </label>
+                    <FormControlLabel
+                        control={
+                            <Checkbox checked={start} onChange={(e) => setStart(e.target.checked)} color="primary" />
+                        }
+                        label="Notify when the first person enters!"
+                    />
                 </div>
                 <div>
-                    <label>
-                        <input type="checkbox" checked={end} onChange={(e) => setEnd(e.target.checked)} />
-                        Notify when the last person leaves!
-                    </label>
+                    <FormControlLabel
+                        control={<Checkbox checked={end} onChange={(e) => setEnd(e.target.checked)} color="primary" />}
+                        label="Notify when the last person leaves!"
+                    />
                 </div>
-                <button onClick={subscribe}>Subscribe/Update Subscription</button>
-                <button onClick={unsubscribe}>Unsubscribe</button>
-                <Status status={status} />
+                <div style={{ padding: "1rem" }} />
+                <div>
+                    <TextField
+                        variant="outlined"
+                        label="Phone"
+                        value={phone}
+                        error={!phoneValid}
+                        helperText={phoneValid ? "" : "This phone number is not valid"}
+                        onChange={(e) => setPhone(e.target.value)}
+                    />
+                    <span style={{ padding: "0.25rem" }} />
+                    <CarrierSelect>
+                        <InputLabel id="carrier-select-label">Carrier</InputLabel>
+                        <Select
+                            id="carrier-select"
+                            labelId="carrier-select-label"
+                            value={carrier}
+                            onChange={(e) => setCarrier(e.target.value as string)}
+                        >
+                            <MenuItem value="vtext.com">Verizon</MenuItem>
+                            <MenuItem value="txt.att.net">AT{"&"}T</MenuItem>
+                            <MenuItem value="messaging.sprintpcs.com">Sprint</MenuItem>
+                            <MenuItem value="tmomail.net">T-Mobile</MenuItem>
+                            <MenuItem value="msg.fi.google.com">Google Fi</MenuItem>
+                        </Select>
+                    </CarrierSelect>
+                </div>
+                <div style={{ width: "100%", textAlign: "center", padding: "0.5rem" }}>- or -</div>
+                <div>
+                    <TextField
+                        variant="outlined"
+                        label="Email"
+                        value={email}
+                        fullWidth
+                        onChange={(e) => setEmail(e.target.value)}
+                    />
+                </div>
+                <div style={{ padding: "1rem" }} />
+                <div style={{ textAlign: "center" }}>
+                    <Button variant="contained" color="primary" disabled={!phoneValid} onClick={subscribe}>
+                        Subscribe
+                    </Button>
+                    <span style={{ padding: "1rem" }} />
+                    <Button variant="outlined" color="secondary" disabled={!phoneValid} onClick={unsubscribe}>
+                        Unsubscribe
+                    </Button>
+                </div>
             </Container>
         </Page>
     );

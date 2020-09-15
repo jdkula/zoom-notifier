@@ -9,13 +9,23 @@
     "lint": "eslint --ext .js,.ts,.jsx,.tsx --ignore-pattern .*node_modules.* ./pages ./components --ignore-pattern .*node_modules.*"
   },
   "dependencies": {
+    "@material-ui/core": "^4.11.0",
+    "@material-ui/icons": "^4.9.1",
+    "@types/axios": "^0.14.0",
+    "@types/google-libphonenumber": "^7.4.19",
+    "@types/mailgun-js": "^0.22.10",
     "@types/styled-components": "^5.1.1",
+    "@types/twilio": "^2.11.0",
     "@zeit/next-workers": "^1.0.0",
+    "axios": "^0.20.0",
+    "google-libphonenumber": "^3.2.13",
+    "mailgun-js": "^0.22.0",
     "mongodb": "^3.5.9",
     "next": "9.4.4",
     "react": "16.13.1",
     "react-dom": "16.13.1",
     "styled-components": "^5.1.1",
+    "twilio": "^3.49.1",
     "web-push": "^3.4.4",
     "worker-loader": "^2.0.0"
   },
