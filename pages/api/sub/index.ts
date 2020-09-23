@@ -1,5 +1,6 @@
 import { NextApiHandler } from "next";
 import mongo from "~/lib/mongo";
+import { sendEmail } from "~/lib/sendEmail";
 import Subscription from "~/lib/subscription";
 
 const Sub: NextApiHandler<Subscription> = async (req, res) => {
@@ -12,7 +13,23 @@ const Sub: NextApiHandler<Subscription> = async (req, res) => {
         ...req.body,
     };
     const db = await mongo;
-    await db.collection("subscriptions").updateOne({ _id: record._id }, { $set: record }, { upsert: true });
+    const { upsertedCount } = await db
+        .collection("subscriptions")
+        .updateOne({ _id: record._id }, { $set: record }, { upsert: true });
+
+    if (upsertedCount) {
+        await sendEmail(
+            req.body.email,
+            "Subscribed to zoom notifications!",
+            req.body.phone ? undefined : "Zoom Notifier notification",
+        );
+    } else {
+        await sendEmail(
+            req.body.email,
+            "Updated your notification information!",
+            req.body.phone ? undefined : "Zoom Notifier notification",
+        );
+    }
 
     res.send(record);
 };

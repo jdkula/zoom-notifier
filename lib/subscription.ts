@@ -3,4 +3,5 @@ export default interface Subscription {
     start: boolean;
     end: boolean;
     email: string | null;
+    phone: boolean;
 }

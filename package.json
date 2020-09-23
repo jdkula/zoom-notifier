@@ -5,9 +5,13 @@
   "scripts": {
     "dev": "cross-env NODE_OPTIONS='--inspect' next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p $PORT",
     "lint": "eslint --ext .js,.ts,.jsx,.tsx --ignore-pattern .*node_modules.* ./pages ./components --ignore-pattern .*node_modules.*"
   },
+  "cacheDirectories": [
+    "node_modules/",
+    ".next/cache/"
+  ],
   "dependencies": {
     "@material-ui/core": "^4.11.0",
     "@material-ui/icons": "^4.9.1",

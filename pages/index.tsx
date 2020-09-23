@@ -4,11 +4,13 @@ import styled, { createGlobalStyle } from "styled-components";
 import {
     Button,
     Checkbox,
+    CircularProgress,
     FormControl,
     FormControlLabel,
     InputLabel,
     MenuItem,
     Select,
+    Snackbar,
     TextField,
 } from "@material-ui/core";
 
@@ -48,6 +50,9 @@ const Container = styled.div`
     padding: 20px;
     border-radius: 10px;
     box-shadow: 20px 20px 100px -20px rgba(0, 0, 0, 1);
+    display: flex;
+    flex-direction: column;
+    align-content: center;
 `;
 
 const CarrierSelect = styled(FormControl)`
@@ -73,7 +78,7 @@ export default function Index(): ReactElement {
             return;
         }
         try {
-            setPhoneValid(phoneUtil.isValidNumberForRegion(phoneUtil.parse(phone, "US"), "US"));
+            setPhoneValid(phone.length === 10 && phoneUtil.isValidNumberForRegion(phoneUtil.parse(phone, "US"), "US"));
         } catch (e) {
             setPhoneValid(false);
         }
@@ -92,20 +97,43 @@ export default function Index(): ReactElement {
         window.localStorage.setItem("end", end.toString());
     }, [start, end]);
 
+    const [open, setOpen] = useState(false);
+    const [errorOpen, setErrorOpen] = useState(false);
+    const [working, setWorking] = useState(false);
+    const error = !phoneValid || (phone !== "" && !carrier);
+
+    const finish = () => {
+        setOpen(true);
+        setWorking(false);
+    };
+
+    const onError = () => {
+        setErrorOpen(true);
+        setWorking(false);
+    };
+
     const subscribe = () => {
+        setWorking(true);
         Axios.post("/api/sub", {
             start,
             end,
             email,
-        });
+            phone: phoneValid && !!phone,
+        })
+            .then(finish)
+            .catch(onError);
     };
 
     const unsubscribe = () => {
-        Axios.delete(`/api/sub/${email}`);
+        setWorking(true);
+        Axios.delete(`/api/sub/${email}`).then(finish).catch(onError);
     };
 
     return (
         <Page>
+            <Snackbar open={open} autoHideDuration={6000} onClose={() => setOpen(false)} message="Done!" />
+            <Snackbar open={errorOpen} autoHideDuration={6000} onClose={() => setErrorOpen(false)} message="Error..." />
+
             <Head>
                 <title>Squad Zoom</title>
                 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -116,7 +144,7 @@ export default function Index(): ReactElement {
             </Head>
             <GlobalStyle />
             <Container>
-                <div>
+                <div style={{ textAlign: "center" }}>
                     <FormControlLabel
                         control={
                             <Checkbox checked={start} onChange={(e) => setStart(e.target.checked)} color="primary" />
@@ -124,29 +152,35 @@ export default function Index(): ReactElement {
                         label="Notify when the first person enters!"
                     />
                 </div>
-                <div>
+                <div style={{ textAlign: "center" }}>
                     <FormControlLabel
                         control={<Checkbox checked={end} onChange={(e) => setEnd(e.target.checked)} color="primary" />}
                         label="Notify when the last person leaves!"
                     />
                 </div>
                 <div style={{ padding: "1rem" }} />
-                <div>
+                <div style={{ textAlign: "center" }}>
                     <TextField
                         variant="outlined"
                         label="Phone"
                         value={phone}
                         error={!phoneValid}
-                        helperText={phoneValid ? "" : "This phone number is not valid"}
+                        inputProps={{ "aria-label": "10-digit US phone number" }}
+                        InputLabelProps={{ "aria-hidden": true }}
+                        FormHelperTextProps={{ "aria-hidden": true }}
+                        helperText={"10-digit US phone number"}
                         onChange={(e) => setPhone(e.target.value)}
                     />
                     <span style={{ padding: "0.25rem" }} />
                     <CarrierSelect>
-                        <InputLabel id="carrier-select-label">Carrier</InputLabel>
+                        <InputLabel id="carrier-select-label" aria-hidden={true}>
+                            Carrier
+                        </InputLabel>
                         <Select
                             id="carrier-select"
                             labelId="carrier-select-label"
                             value={carrier}
+                            error={phoneValid && phone !== "" && !carrier}
                             onChange={(e) => setCarrier(e.target.value as string)}
                         >
                             <MenuItem value="vtext.com">Verizon</MenuItem>
@@ -154,6 +188,7 @@ export default function Index(): ReactElement {
                             <MenuItem value="messaging.sprintpcs.com">Sprint</MenuItem>
                             <MenuItem value="tmomail.net">T-Mobile</MenuItem>
                             <MenuItem value="msg.fi.google.com">Google Fi</MenuItem>
+                            <MenuItem value="mms.cricketwireless.net">Cricket Wireless</MenuItem>
                         </Select>
                     </CarrierSelect>
                 </div>
@@ -169,11 +204,19 @@ export default function Index(): ReactElement {
                 </div>
                 <div style={{ padding: "1rem" }} />
                 <div style={{ textAlign: "center" }}>
-                    <Button variant="contained" color="primary" disabled={!phoneValid} onClick={subscribe}>
+                    {working && (
+                        <>
+                            <CircularProgress variant="indeterminate" />
+                            <div style={{ padding: "1rem" }} />
+                        </>
+                    )}
+                </div>
+                <div style={{ textAlign: "center" }}>
+                    <Button variant="contained" color="primary" disabled={error || working} onClick={subscribe}>
                         Subscribe
                     </Button>
                     <span style={{ padding: "1rem" }} />
-                    <Button variant="outlined" color="secondary" disabled={!phoneValid} onClick={unsubscribe}>
+                    <Button variant="outlined" color="secondary" disabled={error || working} onClick={unsubscribe}>
                         Unsubscribe
                     </Button>
                 </div>
