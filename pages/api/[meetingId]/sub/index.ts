@@ -8,25 +8,33 @@ const Sub: NextApiHandler<Subscription> = async (req, res) => {
         res.status(400).end();
         return;
     }
+    const { meetingId } = req.query;
+
     const record = {
-        _id: req.body.email,
+        for: meetingId,
         ...req.body,
     };
     const db = await mongo;
     const { upsertedCount } = await db
         .collection("subscriptions")
-        .updateOne({ _id: record._id }, { $set: record }, { upsert: true });
+        .updateOne({ email: record.email, for: meetingId }, { $set: record }, { upsert: true });
+
+    const settings = await db
+        .collection<{ for: string; name: string; url: string }>("settings")
+        .findOne({ for: meetingId as string });
+
+    const name = settings?.name || meetingId;
 
     if (upsertedCount) {
         await sendEmail(
             req.body.email,
-            "Subscribed to zoom notifications!",
+            `Subscribed to zoom notifications for ${name}!`,
             req.body.phone ? undefined : "Zoom Notifier notification",
         );
     } else {
         await sendEmail(
             req.body.email,
-            "Updated your notification information!",
+            `Updated your notification information for ${name}!`,
             req.body.phone ? undefined : "Zoom Notifier notification",
         );
     }
