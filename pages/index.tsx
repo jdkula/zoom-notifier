@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement, ReactNode, useState } from 'react';
 import {
     Box,
     Button,
@@ -17,24 +17,23 @@ import Link from 'next/link';
 
 import { useRouter } from 'next/router';
 import Root from '~/components/Root';
-import { getSession } from 'next-auth/client';
-import { GetServerSideProps } from 'next';
-import zoomApi from '~/lib/zoomApi';
 import { Settings as SettingsIcon } from '@material-ui/icons';
 import ZoomMeeting from '~/lib/zoom/ZoomMeeting';
-import ZoomUser from '~/lib/zoom/ZoomUser';
+import useSWR from 'swr';
 
-export default function Index({ meetings }: { meetings: ZoomMeeting[] }): ReactElement {
+export default function Index(): ReactElement {
     const router = useRouter();
     const [meeting, setMeeting] = useState('');
     const [working, setWorking] = useState(false);
+
+    const { data: meetings, error } = useSWR<ZoomMeeting[] | null>('/api/zoom/meetings');
 
     const go = () => {
         setWorking(true);
         router.push(`/meeting/${meeting}`);
     };
 
-    const meetingList = meetings.map((meeting) => (
+    const meetingList = meetings?.map((meeting) => (
         <Link href={`/meeting/${meeting.id}`} key={meeting.uuid}>
             <ListItem button onClick={() => setWorking(true)}>
                 <ListItemText primary={meeting.topic} secondary={meeting.id} />
@@ -49,6 +48,28 @@ export default function Index({ meetings }: { meetings: ZoomMeeting[] }): ReactE
             </ListItem>
         </Link>
     ));
+
+    let meetingsCard: ReactNode | null = null;
+    if (meetings && meetings.length > 0) {
+        meetingsCard = (
+            <Card elevation={10}>
+                <CardContent>
+                    <Typography align="center">Or, choose from one of your meetings:</Typography>
+                    <List>{meetingList}</List>
+                </CardContent>
+            </Card>
+        );
+    } else if (!error && !meetings) {
+        meetingsCard = (
+            <Card elevation={10}>
+                <CardContent>
+                    <Box m="auto" textAlign="center">
+                        <CircularProgress />
+                    </Box>
+                </CardContent>
+            </Card>
+        );
+    }
 
     return (
         <Root title="Zoom Notifier">
@@ -78,27 +99,8 @@ export default function Index({ meetings }: { meetings: ZoomMeeting[] }): ReactE
                     </CardContent>
                 </Card>
                 <Box m={4} />
-                {meetings.length > 0 && (
-                    <Card elevation={10}>
-                        <CardContent>
-                            <Typography align="center">Or, choose from one of your meetings:</Typography>
-                            <List>{meetingList}</List>
-                        </CardContent>
-                    </Card>
-                )}
+                {meetingsCard}
             </Box>
         </Root>
     );
 }
-
-export const getServerSideProps: GetServerSideProps = async (context) => {
-    const session = await getSession(context);
-    const meetings: { meetings: ZoomMeeting[] } | null =
-        session && (await zoomApi(session['uid'], '/users/me/meetings?page_size=300'));
-    const personal: ZoomUser | null = session && (await zoomApi(session['uid'], '/users/me'));
-    if (meetings?.meetings && personal) {
-        const personalMeeting: ZoomMeeting | null = await zoomApi(session['uid'], `/meetings/${personal.pmi}`);
-        meetings.meetings.splice(0, 0, personalMeeting);
-    }
-    return { props: { meetings: meetings?.meetings || [] } };
-};
