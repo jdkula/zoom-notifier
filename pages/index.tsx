@@ -34,7 +34,7 @@ export default function Index({ meetings }: { meetings: any[] }): ReactElement {
 
     const meetingList = meetings.map((meeting) => (
         <Link href={`/meeting/${meeting.id}`} key={meeting.uuid}>
-            <ListItem button>
+            <ListItem button onClick={() => setWorking(true)}>
                 <ListItemText primary={meeting.topic} secondary={meeting.id} />
                 <Box m={1} />
                 <ListItemSecondaryAction>
