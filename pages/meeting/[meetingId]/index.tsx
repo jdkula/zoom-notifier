@@ -1,15 +1,12 @@
 import React, { ReactElement, useEffect, useState } from 'react';
-import Head from 'next/head';
 import styled from 'styled-components';
 import {
     Box,
     Button,
     Card,
     CardContent,
-    CardHeader,
     Checkbox,
     CircularProgress,
-    Divider,
     FormControl,
     FormControlLabel,
     InputLabel,
@@ -23,7 +20,7 @@ import { PhoneNumberUtil } from 'google-libphonenumber';
 import Axios from 'axios';
 import { useSnackbar } from 'notistack';
 import { GetServerSideProps } from 'next';
-import { getSettings } from '../api/[meetingId]/settings';
+import { getSettings } from '../../api/[meetingId]/settings';
 import Root from '~/components/Root';
 import { getSession } from 'next-auth/client';
 import zoomApi from '~/lib/zoomApi';
@@ -33,7 +30,7 @@ const CarrierSelect = styled(FormControl)`
     min-width: 120px;
 `;
 
-export default function Index({
+export default function MeetingSettings({
     meetingId,
     name,
     url,
@@ -258,33 +255,6 @@ export default function Index({
                             Unsubscribe
                         </Button>
                     </div>
-                </CardContent>
-            </Card>
-            <Box m={2} />
-            <Card elevation={10}>
-                <CardContent>
-                    <Typography variant="h5" gutterBottom>
-                        Settings for {meetingId}
-                    </Typography>
-                    <TextField
-                        label="Meeting Name"
-                        value={meetingName}
-                        fullWidth
-                        onChange={(e) => setMeetingName(e.target.value)}
-                        variant="outlined"
-                    />
-                    <Box m={1} />
-                    <TextField
-                        label="Meeting URL"
-                        fullWidth
-                        value={meetingUrl}
-                        onChange={(e) => setMeetingUrl(e.target.value)}
-                        variant="outlined"
-                    />
-                    <Box m={2} />
-                    <Button fullWidth color="primary" variant="contained" onClick={saveSettings}>
-                        Save
-                    </Button>
                 </CardContent>
             </Card>
         </Root>

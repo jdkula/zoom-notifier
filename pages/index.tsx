@@ -1,15 +1,15 @@
-import React, { ReactElement, useEffect, useState } from 'react';
-import Head from 'next/head';
-import styled from 'styled-components';
+import React, { ReactElement, useState } from 'react';
 import {
     Box,
     Button,
     Card,
     CardContent,
+    CircularProgress,
+    IconButton,
     List,
     ListItem,
+    ListItemSecondaryAction,
     ListItemText,
-    Paper,
     TextField,
     Typography,
 } from '@material-ui/core';
@@ -18,21 +18,32 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import Root from '~/components/Root';
 import { getSession, useSession } from 'next-auth/client';
-import Axios from 'axios';
 import { GetServerSideProps } from 'next';
 import zoomApi from '~/lib/zoomApi';
+import { Settings as SettingsIcon } from '@material-ui/icons';
 
 export default function Index({ meetings }: { meetings: any[] }): ReactElement {
     const router = useRouter();
     const [meeting, setMeeting] = useState('');
-    const [session, loading] = useSession();
+    const [working, setWorking] = useState(false);
 
-    const go = () => router.push(`/meeting/${meeting}`);
+    const go = () => {
+        setWorking(true);
+        router.push(`/meeting/${meeting}`);
+    };
 
     const meetingList = meetings.map((meeting) => (
         <Link href={`/meeting/${meeting.id}`} key={meeting.uuid}>
             <ListItem button>
                 <ListItemText primary={meeting.topic} secondary={meeting.id} />
+                <Box m={1} />
+                <ListItemSecondaryAction>
+                    <Link href={`/meeting/${meeting.id}/settings`} onClick={() => setWorking(true)}>
+                        <IconButton edge="end">
+                            <SettingsIcon />
+                        </IconButton>
+                    </Link>
+                </ListItemSecondaryAction>
             </ListItem>
         </Link>
     ));
@@ -53,8 +64,14 @@ export default function Index({ meetings }: { meetings: any[] }): ReactElement {
                             />
                         </form>
                         <Box m={2} />
-                        <Button fullWidth color="primary" variant="contained" onClick={go}>
-                            Go
+                        <Button
+                            fullWidth
+                            color="primary"
+                            variant="contained"
+                            onClick={go}
+                            disabled={working || meeting === ''}
+                        >
+                            {working ? <CircularProgress /> : 'Go'}
                         </Button>
                     </CardContent>
                 </Card>
