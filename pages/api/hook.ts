@@ -2,9 +2,7 @@ import { NextApiHandler } from 'next';
 import mongo from '~/lib/mongo';
 import Subscription from '~/lib/subscription';
 
-import mailgun from 'mailgun-js';
 import { sendEmail } from '../../lib/sendEmail';
-export const mg = mailgun({ apiKey: process.env.MAILGUN_API, domain: process.env.MAILGUN_DOMAIN });
 
 const PARTICIPANT_JOINED = 'meeting.participant_joined';
 const PARTICIPANT_LEFT = 'meeting.participant_left';

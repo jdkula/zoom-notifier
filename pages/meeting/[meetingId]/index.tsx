@@ -196,7 +196,7 @@ export default function MeetingSettings({ meetingId, name }: { meetingId: string
                             label="Notify when the each person leaves!"
                         />
                     </Box>
-                    <Box m={1}>
+                    <Box pt={1} display="flex" justifyContent="center">
                         <TextField
                             variant="outlined"
                             label="Phone"
