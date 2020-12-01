@@ -4,7 +4,6 @@ import Subscription from "~/lib/subscription";
 
 import mailgun from "mailgun-js";
 import { sendEmail } from "../../lib/sendEmail";
-import { stringify } from "querystring";
 export const mg = mailgun({ apiKey: process.env.MAILGUN_API, domain: process.env.MAILGUN_DOMAIN });
 
 const PARTICIPANT_JOINED = "meeting.participant_joined";
@@ -52,7 +51,7 @@ async function notify(event: string, id: string, name: string, uid: string) {
                         subscription.email,
                         `${name ?? "Someone"} just joined ${settings.name}! Join at ${settings.url}`,
                         subscription.phone ? undefined : `${name ?? "Someone"} just joined ${settings.name}!`,
-                    ).catch((e) => console.warn("Failed...")),
+                    ).catch(() => console.warn("Failed...")),
                 );
             } else {
                 promises.push(
@@ -62,7 +61,7 @@ async function notify(event: string, id: string, name: string, uid: string) {
                             settings.name
                         } (now at ${currentParticipants} people)! Join at ${settings.url}`,
                         subscription.phone ? undefined : `${name ?? "Someone"} just joined ${settings.name}!`,
-                    ).catch((e) => console.warn("Failed...")),
+                    ).catch(() => console.warn("Failed...")),
                 );
             }
         } else if (event === PARTICIPANT_LEFT && subscription.each_leave) {
@@ -74,7 +73,7 @@ async function notify(event: string, id: string, name: string, uid: string) {
                             currentParticipants === 1 ? "s" : ""
                         }. Join at ${settings.url}`,
                         subscription.phone ? undefined : `${name ?? "Someone"} just left ${settings.name}!`,
-                    ).catch((e) => console.log("Failed...")),
+                    ).catch(() => console.log("Failed...")),
                 );
             } else {
                 promises.push(
@@ -82,7 +81,7 @@ async function notify(event: string, id: string, name: string, uid: string) {
                         subscription.email,
                         `${name ?? "Someone"} just left ${settings.name}. Nobody's left.`,
                         subscription.phone ? undefined : `Nobody's left in ${settings.name}.`,
-                    ).catch((e) => console.log("Failed...")),
+                    ).catch(() => console.log("Failed...")),
                 );
             }
         } else if (
@@ -96,7 +95,7 @@ async function notify(event: string, id: string, name: string, uid: string) {
                     subscription.email,
                     `Nobody's left in ${settings.name}.`,
                     subscription.phone ? undefined : `Nobody's left in ${settings.name}.`,
-                ).catch((e) => console.log("Failed...")),
+                ).catch(() => console.log("Failed...")),
             );
         }
     }
@@ -119,9 +118,8 @@ const Hook: NextApiHandler = async (req, res) => {
         return;
     }
 
-    res.status(200).end("OK");
-
     await notify(req.body.event, id, name, uid);
+    res.status(200).end("OK");
 };
 
 export default Hook;

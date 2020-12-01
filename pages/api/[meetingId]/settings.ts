@@ -5,13 +5,18 @@ import Subscription from "~/lib/subscription";
 
 export type Setting = { name: string; url: string };
 
-export const getSettings = async (meetingId: string): Promise<Setting> =>
+export const getSettings = async (meetingId: string, defaultName?: string, defaultUrl?: string): Promise<Setting> =>
     (
         await (await mongo)
             .collection("settings")
             .findOneAndUpdate(
                 { for: meetingId },
-                { $setOnInsert: { name: meetingId, url: `https://zoom.us/j/${meetingId}` } },
+                {
+                    $setOnInsert: {
+                        name: defaultName ?? meetingId,
+                        url: defaultUrl ?? `https://zoom.us/j/${meetingId}`,
+                    },
+                },
                 { upsert: true, returnOriginal: false, projection: { _id: 0, name: 1, url: 1 } },
             )
     ).value;
