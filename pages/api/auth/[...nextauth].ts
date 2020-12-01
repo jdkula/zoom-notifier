@@ -31,7 +31,7 @@ const options = {
                 await (await mongo)
                     .collection('accounts')
                     .findOneAndUpdate(
-                        { zoom_id: account.id },
+                        { _id: account.id },
                         { $set: { refresh_token: account.refreshToken, access_token: account.accessToken } },
                         { returnOriginal: false, upsert: true },
                     );

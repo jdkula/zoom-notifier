@@ -23,7 +23,7 @@ const Hook: NextApiHandler = async (req, res) => {
         return;
     }
 
-    db.accounts.deleteOne({ zoom_id: id });
+    db.accounts.deleteOne({ _id: id });
 
     await Axios.post(
         'https://api.zoom.us/oauth/data/compliance',
