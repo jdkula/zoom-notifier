@@ -1,6 +1,6 @@
-import React, { ReactElement, useEffect, useState } from "react";
-import Head from "next/head";
-import styled from "styled-components";
+import React, { ReactElement, useEffect, useState } from 'react';
+import Head from 'next/head';
+import styled from 'styled-components';
 import {
     Box,
     Button,
@@ -12,19 +12,19 @@ import {
     Paper,
     TextField,
     Typography,
-} from "@material-ui/core";
-import Link from "next/link";
+} from '@material-ui/core';
+import Link from 'next/link';
 
-import { useRouter } from "next/router";
-import Root from "~/components/Root";
-import { getSession, useSession } from "next-auth/client";
-import Axios from "axios";
-import { GetServerSideProps } from "next";
-import zoomApi from "~/lib/zoomApi";
+import { useRouter } from 'next/router';
+import Root from '~/components/Root';
+import { getSession, useSession } from 'next-auth/client';
+import Axios from 'axios';
+import { GetServerSideProps } from 'next';
+import zoomApi from '~/lib/zoomApi';
 
 export default function Index({ meetings }: { meetings: any[] }): ReactElement {
     const router = useRouter();
-    const [meeting, setMeeting] = useState("");
+    const [meeting, setMeeting] = useState('');
     const [session, loading] = useSession();
 
     const go = () => router.push(`/meeting/${meeting}`);
@@ -49,7 +49,7 @@ export default function Index({ meetings }: { meetings: any[] }): ReactElement {
                                 label="Zoom Meeting ID"
                                 value={meeting}
                                 fullWidth
-                                onChange={(e) => setMeeting(e.target.value.replaceAll(/[^0-9]/g, ""))}
+                                onChange={(e) => setMeeting(e.target.value.replaceAll(/[^0-9]/g, ''))}
                             />
                         </form>
                         <Box m={2} />
@@ -74,10 +74,10 @@ export default function Index({ meetings }: { meetings: any[] }): ReactElement {
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
     const session = await getSession(context);
-    const meetings = session && (await zoomApi(session["uid"], "/users/me/meetings?page_size=300"));
-    const personal = session && (await zoomApi(session["uid"], "/users/me"));
+    const meetings = session && (await zoomApi(session['uid'], '/users/me/meetings?page_size=300'));
+    const personal = session && (await zoomApi(session['uid'], '/users/me'));
     if (meetings?.meetings && personal) {
-        const personalMeeting = await zoomApi(session["uid"], `/meetings/${personal.pmi}`);
+        const personalMeeting = await zoomApi(session['uid'], `/meetings/${personal.pmi}`);
         meetings.meetings.splice(0, 0, personalMeeting);
     }
     return { props: { meetings: meetings?.meetings || [] } };

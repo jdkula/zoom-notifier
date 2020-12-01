@@ -1,10 +1,10 @@
-import { NextApiHandler } from "next";
-import mongo from "~/lib/mongo";
-import { sendEmail } from "~/lib/sendEmail";
-import Subscription from "~/lib/subscription";
+import { NextApiHandler } from 'next';
+import mongo from '~/lib/mongo';
+import { sendEmail } from '~/lib/sendEmail';
+import Subscription from '~/lib/subscription';
 
 const Sub: NextApiHandler<Subscription> = async (req, res) => {
-    if (req.method !== "POST") {
+    if (req.method !== 'POST') {
         res.status(400).end();
         return;
     }
@@ -16,11 +16,11 @@ const Sub: NextApiHandler<Subscription> = async (req, res) => {
     };
     const db = await mongo;
     const { upsertedCount } = await db
-        .collection("subscriptions")
+        .collection('subscriptions')
         .updateOne({ email: record.email, for: meetingId }, { $set: record }, { upsert: true });
 
     const settings = await db
-        .collection<{ for: string; name: string; url: string }>("settings")
+        .collection<{ for: string; name: string; url: string }>('settings')
         .findOne({ for: meetingId as string });
 
     const name = settings?.name || meetingId;
@@ -29,13 +29,13 @@ const Sub: NextApiHandler<Subscription> = async (req, res) => {
         await sendEmail(
             req.body.email,
             `Subscribed to zoom notifications for ${name}!`,
-            req.body.phone ? undefined : "Zoom Notifier notification",
+            req.body.phone ? undefined : 'Zoom Notifier notification',
         );
     } else {
         await sendEmail(
             req.body.email,
             `Updated your notification information for ${name}!`,
-            req.body.phone ? undefined : "Zoom Notifier notification",
+            req.body.phone ? undefined : 'Zoom Notifier notification',
         );
     }
 

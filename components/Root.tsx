@@ -1,8 +1,8 @@
-import { AppBar, Box, Button, Link, Toolbar, Typography } from "@material-ui/core";
-import Head from "next/head";
-import React, { FC } from "react";
-import styled from "styled-components";
-import { useSession, signOut, signIn } from "next-auth/client";
+import { AppBar, Box, Button, Link, Toolbar, Typography } from '@material-ui/core';
+import Head from 'next/head';
+import React, { FC } from 'react';
+import styled from 'styled-components';
+import { useSession, signOut, signIn } from 'next-auth/client';
 
 const Page = styled.div`
     display: grid;
@@ -21,7 +21,7 @@ const Root: FC<{ title?: string }> = ({ children, title }) => {
     };
 
     const doLogIn = () => {
-        return signIn("zoom");
+        return signIn('zoom');
     };
 
     return (

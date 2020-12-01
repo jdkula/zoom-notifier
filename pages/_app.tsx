@@ -1,13 +1,13 @@
-import "reflect-metadata";
-import { AppProps } from "next/app";
+import 'reflect-metadata';
+import { AppProps } from 'next/app';
 
-import Head from "next/head";
+import Head from 'next/head';
 
-import { ReactElement } from "react";
-import { createMuiTheme, ThemeProvider as MuiThemeProvider, CssBaseline, StylesProvider } from "@material-ui/core";
-import { ThemeProvider } from "styled-components";
-import { SnackbarProvider } from "notistack";
-import { Provider } from "next-auth/client";
+import { ReactElement } from 'react';
+import { createMuiTheme, ThemeProvider as MuiThemeProvider, CssBaseline, StylesProvider } from '@material-ui/core';
+import { ThemeProvider } from 'styled-components';
+import { SnackbarProvider } from 'notistack';
+import { Provider } from 'next-auth/client';
 
 const theme = createMuiTheme({});
 

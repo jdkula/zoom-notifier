@@ -1,6 +1,6 @@
-import React, { ReactElement, useEffect, useState } from "react";
-import Head from "next/head";
-import styled from "styled-components";
+import React, { ReactElement, useEffect, useState } from 'react';
+import Head from 'next/head';
+import styled from 'styled-components';
 import {
     Box,
     Button,
@@ -17,16 +17,16 @@ import {
     Select,
     TextField,
     Typography,
-} from "@material-ui/core";
+} from '@material-ui/core';
 
-import { PhoneNumberUtil } from "google-libphonenumber";
-import Axios from "axios";
-import { useSnackbar } from "notistack";
-import { GetServerSideProps } from "next";
-import { getSettings } from "../api/[meetingId]/settings";
-import Root from "~/components/Root";
-import { getSession } from "next-auth/client";
-import zoomApi from "~/lib/zoomApi";
+import { PhoneNumberUtil } from 'google-libphonenumber';
+import Axios from 'axios';
+import { useSnackbar } from 'notistack';
+import { GetServerSideProps } from 'next';
+import { getSettings } from '../api/[meetingId]/settings';
+import Root from '~/components/Root';
+import { getSession } from 'next-auth/client';
+import zoomApi from '~/lib/zoomApi';
 const phoneUtil = PhoneNumberUtil.getInstance();
 
 const CarrierSelect = styled(FormControl)`
@@ -43,9 +43,9 @@ export default function Index({
     url: string;
 }): ReactElement {
     const { enqueueSnackbar } = useSnackbar();
-    const [email, setEmail] = useState("");
-    const [phone, setPhone] = useState("");
-    const [carrier, setCarrier] = useState("");
+    const [email, setEmail] = useState('');
+    const [phone, setPhone] = useState('');
+    const [carrier, setCarrier] = useState('');
 
     const [meetingName, setMeetingName] = useState(name);
     const [meetingUrl, setMeetingUrl] = useState(url);
@@ -59,12 +59,12 @@ export default function Index({
     }, [phone, carrier]);
 
     useEffect(() => {
-        if (phone === "") {
+        if (phone === '') {
             setPhoneValid(true);
             return;
         }
         try {
-            setPhoneValid(phone.length === 10 && phoneUtil.isValidNumberForRegion(phoneUtil.parse(phone, "US"), "US"));
+            setPhoneValid(phone.length === 10 && phoneUtil.isValidNumberForRegion(phoneUtil.parse(phone, 'US'), 'US'));
         } catch (e) {
             setPhoneValid(false);
         }
@@ -83,38 +83,38 @@ export default function Index({
         setEachJoin(window.localStorage.getItem(`${meetingId}_each_join`) !== null);
         setEachLeave(window.localStorage.getItem(`${meetingId}_each_leave`) !== null);
 
-        setPhone(window.localStorage.getItem("phone") ?? "");
-        setCarrier(window.localStorage.getItem("carrier") ?? "");
-        setEmail(window.localStorage.getItem("email") ?? "");
+        setPhone(window.localStorage.getItem('phone') ?? '');
+        setCarrier(window.localStorage.getItem('carrier') ?? '');
+        setEmail(window.localStorage.getItem('email') ?? '');
     }, [meetingId]);
 
     useEffect(() => {
         if (!meetingId) return;
 
-        window.localStorage.setItem("phone", phone);
-        window.localStorage.setItem("carrier", carrier);
-        window.localStorage.setItem("email", email);
+        window.localStorage.setItem('phone', phone);
+        window.localStorage.setItem('carrier', carrier);
+        window.localStorage.setItem('email', email);
 
-        if (start) window.localStorage.setItem(`${meetingId}_start`, "true");
+        if (start) window.localStorage.setItem(`${meetingId}_start`, 'true');
         else window.localStorage.removeItem(`${meetingId}_start`);
-        if (end) window.localStorage.setItem(`${meetingId}_end`, "true");
+        if (end) window.localStorage.setItem(`${meetingId}_end`, 'true');
         else window.localStorage.removeItem(`${meetingId}_end`);
-        if (eachJoin) window.localStorage.setItem(`${meetingId}_each_join`, "true");
+        if (eachJoin) window.localStorage.setItem(`${meetingId}_each_join`, 'true');
         else window.localStorage.removeItem(`${meetingId}_each_join`);
-        if (eachLeave) window.localStorage.setItem(`${meetingId}_each_leave`, "true");
+        if (eachLeave) window.localStorage.setItem(`${meetingId}_each_leave`, 'true');
         else window.localStorage.removeItem(`${meetingId}_each_leave`);
     });
 
     const [working, setWorking] = useState(false);
-    const error = !phoneValid || (phone !== "" && !carrier);
+    const error = !phoneValid || (phone !== '' && !carrier);
 
     const finish = () => {
-        enqueueSnackbar("Done!", { variant: "success" });
+        enqueueSnackbar('Done!', { variant: 'success' });
         setWorking(false);
     };
 
     const onError = () => {
-        enqueueSnackbar("Couldn't subscribe!", { variant: "error" });
+        enqueueSnackbar("Couldn't subscribe!", { variant: 'error' });
         setWorking(false);
     };
 
@@ -196,20 +196,20 @@ export default function Index({
                             label="Notify when the each person leaves!"
                         />
                     </div>
-                    <div style={{ padding: "1rem" }} />
-                    <div style={{ textAlign: "center" }}>
+                    <div style={{ padding: '1rem' }} />
+                    <div style={{ textAlign: 'center' }}>
                         <TextField
                             variant="outlined"
                             label="Phone"
                             value={phone}
                             error={!phoneValid}
-                            inputProps={{ "aria-label": "10-digit US phone number" }}
-                            InputLabelProps={{ "aria-hidden": true }}
-                            FormHelperTextProps={{ "aria-hidden": true }}
-                            helperText={"10-digit US phone number"}
+                            inputProps={{ 'aria-label': '10-digit US phone number' }}
+                            InputLabelProps={{ 'aria-hidden': true }}
+                            FormHelperTextProps={{ 'aria-hidden': true }}
+                            helperText={'10-digit US phone number'}
                             onChange={(e) => setPhone(e.target.value)}
                         />
-                        <span style={{ padding: "0.25rem" }} />
+                        <span style={{ padding: '0.25rem' }} />
                         <CarrierSelect>
                             <InputLabel id="carrier-select-label" aria-hidden={true}>
                                 Carrier
@@ -218,11 +218,11 @@ export default function Index({
                                 id="carrier-select"
                                 labelId="carrier-select-label"
                                 value={carrier}
-                                error={phoneValid && phone !== "" && !carrier}
+                                error={phoneValid && phone !== '' && !carrier}
                                 onChange={(e) => setCarrier(e.target.value as string)}
                             >
                                 <MenuItem value="vtext.com">Verizon</MenuItem>
-                                <MenuItem value="txt.att.net">AT{"&"}T</MenuItem>
+                                <MenuItem value="txt.att.net">AT{'&'}T</MenuItem>
                                 <MenuItem value="messaging.sprintpcs.com">Sprint</MenuItem>
                                 <MenuItem value="tmomail.net">T-Mobile</MenuItem>
                                 <MenuItem value="msg.fi.google.com">Google Fi</MenuItem>
@@ -230,7 +230,7 @@ export default function Index({
                             </Select>
                         </CarrierSelect>
                     </div>
-                    <div style={{ width: "100%", textAlign: "center", padding: "0.5rem" }}>- or -</div>
+                    <div style={{ width: '100%', textAlign: 'center', padding: '0.5rem' }}>- or -</div>
                     <div>
                         <TextField
                             variant="outlined"
@@ -240,20 +240,20 @@ export default function Index({
                             onChange={(e) => setEmail(e.target.value)}
                         />
                     </div>
-                    <div style={{ padding: "1rem" }} />
-                    <div style={{ textAlign: "center" }}>
+                    <div style={{ padding: '1rem' }} />
+                    <div style={{ textAlign: 'center' }}>
                         {working && (
                             <>
                                 <CircularProgress variant="indeterminate" />
-                                <div style={{ padding: "1rem" }} />
+                                <div style={{ padding: '1rem' }} />
                             </>
                         )}
                     </div>
-                    <div style={{ textAlign: "center" }}>
+                    <div style={{ textAlign: 'center' }}>
                         <Button variant="contained" color="primary" disabled={error || working} onClick={subscribe}>
                             Subscribe
                         </Button>
-                        <span style={{ padding: "1rem" }} />
+                        <span style={{ padding: '1rem' }} />
                         <Button variant="outlined" color="secondary" disabled={error || working} onClick={unsubscribe}>
                             Unsubscribe
                         </Button>
@@ -298,7 +298,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     let meetingDetails: any = null;
     if (session) {
         try {
-            meetingDetails = await zoomApi(session["uid"], `/meetings/${meetingId}`);
+            meetingDetails = await zoomApi(session['uid'], `/meetings/${meetingId}`);
         } catch (e) {
             // do nothing
         }
