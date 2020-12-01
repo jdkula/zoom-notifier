@@ -27,6 +27,7 @@ class MyDocument extends Document {
                 styles: (
                     <>
                         {initialProps.styles}
+                        {muiSheets.getStyleElement()}
                         {sheet.getStyleElement()}
                     </>
                 ),
