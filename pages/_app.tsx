@@ -3,7 +3,7 @@ import { AppProps } from 'next/app';
 
 import Head from 'next/head';
 
-import { ReactElement } from 'react';
+import { ReactElement, useEffect } from 'react';
 import { createMuiTheme, ThemeProvider as MuiThemeProvider, CssBaseline, StylesProvider } from '@material-ui/core';
 import { ThemeProvider } from 'styled-components';
 import { SnackbarProvider } from 'notistack';
@@ -12,6 +12,13 @@ import { Provider } from 'next-auth/client';
 const theme = createMuiTheme({});
 
 export default function App({ Component, pageProps }: AppProps): ReactElement {
+    // clear Server-Side injected CSS for Material-UI
+    useEffect(() => {
+        const jssStyles = document.querySelector('#jss-server-side');
+        if (jssStyles) {
+            jssStyles.parentElement.removeChild(jssStyles);
+        }
+    }, []);
     return (
         <StylesProvider injectFirst>
             <MuiThemeProvider theme={theme}>
