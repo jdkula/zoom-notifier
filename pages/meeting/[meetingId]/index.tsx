@@ -1,4 +1,4 @@
-import React, { ReactElement, useEffect, useState } from 'react';
+import React, { FC, ReactElement, useEffect, useState } from 'react';
 import styled from 'styled-components';
 import {
     Box,
@@ -30,22 +30,35 @@ const CarrierSelect = styled(FormControl)`
     min-width: 120px;
 `;
 
-export default function MeetingSettings({
-    meetingId,
-    name,
-    url,
-}: {
-    meetingId: string;
-    name: string;
-    url: string;
-}): ReactElement {
+const DividerContainer = styled.div`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: ${({ theme }) => theme.spacing(1)}px ${({ theme }) => theme.spacing(2)}px;
+`;
+const DividerContent = styled.span`
+    padding: ${({ theme }) => theme.spacing(1)}px;
+    color: lightgray;
+`;
+const Border = styled.div`
+    flex-grow: 1;
+    height: 1px;
+    background-color: lightgray;
+`;
+
+const Divider: FC = ({ children }) => (
+    <DividerContainer>
+        <Border />
+        <DividerContent>{children}</DividerContent>
+        <Border />
+    </DividerContainer>
+);
+
+export default function MeetingSettings({ meetingId, name }: { meetingId: string; name: string }): ReactElement {
     const { enqueueSnackbar } = useSnackbar();
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
     const [carrier, setCarrier] = useState('');
-
-    const [meetingName, setMeetingName] = useState(name);
-    const [meetingUrl, setMeetingUrl] = useState(url);
 
     const [phoneValid, setPhoneValid] = useState(false);
 
@@ -134,10 +147,6 @@ export default function MeetingSettings({
         Axios.delete(`/api/${meetingId}/sub/${email}`).then(finish).catch(onError);
     };
 
-    const saveSettings = () => {
-        Axios.put(`/api/${meetingId}/settings`, { name: meetingName, url: meetingUrl }).then(finish).catch(onError);
-    };
-
     return (
         <Root title={`Zoom Notifier: ${name}`}>
             <Card elevation={10}>
@@ -145,7 +154,7 @@ export default function MeetingSettings({
                     <Typography variant="h5" gutterBottom>
                         Notifications for {meetingId}
                     </Typography>
-                    <div>
+                    <Box display="flex" flexDirection="column">
                         <FormControlLabel
                             control={
                                 <Checkbox
@@ -156,8 +165,6 @@ export default function MeetingSettings({
                             }
                             label="Notify when the first person enters!"
                         />
-                    </div>
-                    <div>
                         <FormControlLabel
                             control={
                                 <Checkbox
@@ -168,8 +175,6 @@ export default function MeetingSettings({
                             }
                             label="Notify when the each person enters!"
                         />
-                    </div>
-                    <div>
                         <FormControlLabel
                             control={
                                 <Checkbox
@@ -180,8 +185,6 @@ export default function MeetingSettings({
                             }
                             label="Notify when the last person leaves!"
                         />
-                    </div>
-                    <div>
                         <FormControlLabel
                             control={
                                 <Checkbox
@@ -192,9 +195,8 @@ export default function MeetingSettings({
                             }
                             label="Notify when the each person leaves!"
                         />
-                    </div>
-                    <div style={{ padding: '1rem' }} />
-                    <div style={{ textAlign: 'center' }}>
+                    </Box>
+                    <Box m={1}>
                         <TextField
                             variant="outlined"
                             label="Phone"
@@ -226,35 +228,31 @@ export default function MeetingSettings({
                                 <MenuItem value="mms.cricketwireless.net">Cricket Wireless</MenuItem>
                             </Select>
                         </CarrierSelect>
-                    </div>
-                    <div style={{ width: '100%', textAlign: 'center', padding: '0.5rem' }}>- or -</div>
-                    <div>
-                        <TextField
-                            variant="outlined"
-                            label="Email"
-                            value={email}
-                            fullWidth
-                            onChange={(e) => setEmail(e.target.value)}
-                        />
-                    </div>
-                    <div style={{ padding: '1rem' }} />
-                    <div style={{ textAlign: 'center' }}>
-                        {working && (
-                            <>
-                                <CircularProgress variant="indeterminate" />
-                                <div style={{ padding: '1rem' }} />
-                            </>
-                        )}
-                    </div>
-                    <div style={{ textAlign: 'center' }}>
+                    </Box>
+                    <Divider>Or</Divider>
+                    <TextField
+                        variant="outlined"
+                        label="Email"
+                        value={email}
+                        fullWidth
+                        onChange={(e) => setEmail(e.target.value)}
+                    />
+                    <Box m={1} />
+                    {working && (
+                        <Box textAlign={1}>
+                            <CircularProgress variant="indeterminate" />
+                            <Box m={1} />
+                        </Box>
+                    )}
+                    <Box textAlign="center">
                         <Button variant="contained" color="primary" disabled={error || working} onClick={subscribe}>
                             Subscribe
                         </Button>
-                        <span style={{ padding: '1rem' }} />
+                        <Box m={1} component="span" />
                         <Button variant="outlined" color="secondary" disabled={error || working} onClick={unsubscribe}>
                             Unsubscribe
                         </Button>
-                    </div>
+                    </Box>
                 </CardContent>
             </Card>
         </Root>

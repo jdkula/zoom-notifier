@@ -38,8 +38,8 @@ export default function Index({ meetings }: { meetings: any[] }): ReactElement {
                 <ListItemText primary={meeting.topic} secondary={meeting.id} />
                 <Box m={1} />
                 <ListItemSecondaryAction>
-                    <Link href={`/meeting/${meeting.id}/settings`} onClick={() => setWorking(true)}>
-                        <IconButton edge="end">
+                    <Link href={`/meeting/${meeting.id}/settings`}>
+                        <IconButton edge="end" onClick={() => setWorking(true)}>
                             <SettingsIcon />
                         </IconButton>
                     </Link>

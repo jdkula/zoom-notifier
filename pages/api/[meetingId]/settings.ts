@@ -25,23 +25,23 @@ const Settings: NextApiHandler = async (req, res) => {
     const { meetingId } = req.query;
     const db = (await mongo).collection('settings');
 
-    const session = await getSession({ req });
-    let meetingDetails: any = null;
-    if (session) {
-        try {
-            meetingDetails = await zoomApi(session['uid'], `/meetings/${meetingId}`);
-        } catch (e) {
-            // do nothing
-        }
-    }
-
-    if (!meetingDetails) {
-        return res.status(401).end('Not authorized to access this meeting');
-    }
-
     if (req.method === 'GET') {
         res.send(await getSettings(meetingId as string));
     } else if (req.method === 'PUT') {
+        const session = await getSession({ req });
+        let meetingDetails: any = null;
+        if (session) {
+            try {
+                meetingDetails = await zoomApi(session['uid'], `/meetings/${meetingId}`);
+            } catch (e) {
+                // do nothing
+            }
+        }
+
+        if (!meetingDetails) {
+            return res.status(401).end('Not authorized to access this meeting');
+        }
+
         const record = {
             for: meetingId,
             ...req.body,
