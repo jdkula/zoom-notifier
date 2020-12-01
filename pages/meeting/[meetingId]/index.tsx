@@ -152,7 +152,7 @@ export default function MeetingSettings({ meetingId, name }: { meetingId: string
             <Card elevation={10}>
                 <CardContent>
                     <Typography variant="h5" gutterBottom>
-                        Notifications for {meetingId}
+                        Notifications for {name}
                     </Typography>
                     <Box display="flex" flexDirection="column">
                         <FormControlLabel
