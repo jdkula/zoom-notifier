@@ -20,12 +20,14 @@ import Root from '~/components/Root';
 import { Settings as SettingsIcon } from '@material-ui/icons';
 import ZoomMeeting from '~/lib/zoom/ZoomMeeting';
 import useSWR from 'swr';
+import { useSession } from 'next-auth/client';
 
 export default function Index(): ReactElement {
     const router = useRouter();
     const [meeting, setMeeting] = useState('');
     const [working, setWorking] = useState(false);
 
+    const [session] = useSession();
     const { data: meetings, error } = useSWR<ZoomMeeting[] | null>('/api/zoom/meetings');
 
     const go = () => {
@@ -53,20 +55,20 @@ export default function Index(): ReactElement {
     if (meetings && meetings.length > 0) {
         meetingsCard = (
             <Card elevation={10}>
-                <CardContent>
+                <Box m={2}>
                     <Typography align="center">Or, choose from one of your meetings:</Typography>
                     <List>{meetingList}</List>
-                </CardContent>
+                </Box>
             </Card>
         );
-    } else if (!error && !meetings) {
+    } else if (!error && !meetings && session) {
         meetingsCard = (
             <Card elevation={10}>
-                <CardContent>
-                    <Box m="auto" textAlign="center">
+                <Box m={3}>
+                    <Box textAlign="center">
                         <CircularProgress />
                     </Box>
-                </CardContent>
+                </Box>
             </Card>
         );
     }
