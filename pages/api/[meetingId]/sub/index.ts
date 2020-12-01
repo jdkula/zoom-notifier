@@ -1,27 +1,28 @@
 import { NextApiHandler } from 'next';
-import mongo from '~/lib/mongo';
+import { collections, Subscription } from '~/lib/mongo';
 import { sendEmail } from '~/lib/sendEmail';
-import Subscription from '~/lib/subscription';
 
 const Sub: NextApiHandler<Subscription> = async (req, res) => {
+    const db = await collections;
+
     if (req.method !== 'POST') {
         res.status(400).end();
         return;
     }
-    const { meetingId } = req.query;
+    const { meetingId } = req.query as Record<string, string>;
 
     const record = {
-        for: meetingId,
         ...req.body,
+        meetingId,
     };
-    const db = await mongo;
-    const { upsertedCount } = await db
-        .collection('subscriptions')
-        .updateOne({ email: record.email, for: meetingId }, { $set: record }, { upsert: true });
 
-    const settings = await db
-        .collection<{ for: string; name: string; url: string }>('settings')
-        .findOne({ for: meetingId as string });
+    const { upsertedCount } = await db.subscriptions.updateOne(
+        { email: record.email, meetingId },
+        { $set: record },
+        { upsert: true },
+    );
+
+    const settings = await db.settings.findOne({ meetingId });
 
     const name = settings?.name || meetingId;
 

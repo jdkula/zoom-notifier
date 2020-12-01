@@ -1,38 +1,35 @@
 import { NextApiHandler } from 'next';
-import mongo from '~/lib/mongo';
-import Subscription from '~/lib/subscription';
+import { collections } from '~/lib/mongo';
 
 import { sendEmail } from '../../lib/sendEmail';
 
 const PARTICIPANT_JOINED = 'meeting.participant_joined';
 const PARTICIPANT_LEFT = 'meeting.participant_left';
 
-type Meeting = { _id: string; participants: string[] };
-
 async function notify(event: string, id: string, name: string, uid: string) {
-    const db = await mongo;
+    const db = await collections;
 
     let currentParticipants: number;
     if (event === PARTICIPANT_JOINED) {
-        const meeting = await db
-            .collection<Meeting>('meetings')
-            .findOneAndUpdate(
-                { _id: id },
-                { $addToSet: { participants: uid } },
-                { returnOriginal: true, upsert: true },
-            );
+        const meeting = await db.meetings.findOneAndUpdate(
+            { _id: id },
+            { $addToSet: { participants: uid } },
+            { returnOriginal: true, upsert: true },
+        );
         if ((meeting.value?.participants ?? []).includes(uid)) return; // duplicate notifiaction – already joined
         currentParticipants = (meeting.value?.participants?.length ?? 0) + 1; // account for new participant
     } else if (event === PARTICIPANT_LEFT) {
-        const meeting = await db
-            .collection<Meeting>('meetings')
-            .findOneAndUpdate({ _id: id }, { $pull: { participants: uid } }, { returnOriginal: true, upsert: true });
+        const meeting = await db.meetings.findOneAndUpdate(
+            { _id: id },
+            { $pull: { participants: uid } },
+            { returnOriginal: true, upsert: true },
+        );
         if (!(meeting.value?.participants ?? []).includes(uid)) return; // duplicate notification – already left
         currentParticipants = (meeting.value?.participants?.length ?? 1) - 1;
     }
 
-    const subscriptions = await db.collection<Subscription>('subscriptions').find({ for: id }).toArray();
-    const settings = await db.collection<{ for: string; name: string; url: string }>('settings').findOne({ for: id });
+    const subscriptions = await db.subscriptions.find({ meetingId: id }).toArray();
+    const settings = await db.settings.findOne({ meetingId: id });
 
     if (!settings) return;
 

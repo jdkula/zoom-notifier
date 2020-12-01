@@ -1,5 +1,5 @@
+import { NextApiHandler } from 'next';
 import NextAuth from 'next-auth';
-import Providers from 'next-auth/providers';
 import mongo from '~/lib/mongo';
 
 const options = {
@@ -44,15 +44,8 @@ const options = {
             return session;
         },
     },
-
-    // database: {
-    //     type: "mongodb" as any,
-    //     useNewUrlParser: true,
-    //     url: process.env.MONGO_URL,
-    //     ssl: true,
-    //     useUnifiedTopology: true,
-    //     retryWrites: true,
-    // },
 };
 
-export default (req, res) => NextAuth(req, res, options);
+const Auth: NextApiHandler = (req, res) => NextAuth(req, res, options);
+
+export default Auth;

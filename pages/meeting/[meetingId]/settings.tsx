@@ -1,35 +1,15 @@
 import React, { ReactElement, useEffect, useState } from 'react';
-import styled from 'styled-components';
-import {
-    Box,
-    Button,
-    Card,
-    CardContent,
-    Checkbox,
-    CircularProgress,
-    FormControl,
-    FormControlLabel,
-    InputLabel,
-    MenuItem,
-    Select,
-    TextField,
-    Typography,
-} from '@material-ui/core';
+import { Box, Button, Card, CardContent, CircularProgress, TextField, Typography } from '@material-ui/core';
 
-import { PhoneNumberUtil } from 'google-libphonenumber';
 import Axios from 'axios';
 import { useSnackbar } from 'notistack';
 import { GetServerSideProps } from 'next';
 import { getSettings } from '../../api/[meetingId]/settings';
 import Root from '~/components/Root';
-import { getSession, useSession } from 'next-auth/client';
+import { getSession } from 'next-auth/client';
 import zoomApi from '~/lib/zoomApi';
 import { useRouter } from 'next/router';
-const phoneUtil = PhoneNumberUtil.getInstance();
-
-const CarrierSelect = styled(FormControl)`
-    min-width: 120px;
-`;
+import ZoomMeeting from '~/lib/zoom/ZoomMeeting';
 
 const MeetingSettingsInner = ({ meetingId, name, url }: { meetingId: string; name: string; url: string }) => {
     const { enqueueSnackbar } = useSnackbar();
@@ -113,7 +93,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     const meetingId = context.params?.meetingId as string;
 
     const session = await getSession(context);
-    let meetingDetails: any = null;
+    let meetingDetails: ZoomMeeting = null;
     if (session) {
         try {
             meetingDetails = await zoomApi(session['uid'], `/meetings/${meetingId}`);

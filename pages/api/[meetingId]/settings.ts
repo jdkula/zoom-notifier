@@ -1,35 +1,33 @@
 import { NextApiHandler } from 'next';
 import { getSession } from 'next-auth/client';
-import mongo from '~/lib/mongo';
-import { sendEmail } from '~/lib/sendEmail';
-import Subscription from '~/lib/subscription';
+import { collections, Setting } from '~/lib/mongo';
+import ZoomMeeting from '~/lib/zoom/ZoomMeeting';
 import zoomApi from '~/lib/zoomApi';
-
-export type Setting = { name: string; url: string };
 
 export const getSettings = async (meetingId: string, defaultName?: string, defaultUrl?: string): Promise<Setting> =>
     (
-        await (await mongo).collection('settings').findOneAndUpdate(
-            { for: meetingId },
+        await (await collections).settings.findOneAndUpdate(
+            { meetingId },
             {
                 $setOnInsert: {
                     name: defaultName ?? meetingId,
                     url: defaultUrl ?? `https://zoom.us/j/${meetingId}`,
                 },
             },
-            { upsert: true, returnOriginal: false, projection: { _id: 0, name: 1, url: 1 } },
+            { upsert: true, returnOriginal: false, projection: { _id: 0 } },
         )
     ).value;
 
 const Settings: NextApiHandler = async (req, res) => {
-    const { meetingId } = req.query;
-    const db = (await mongo).collection('settings');
+    const { meetingId } = req.query as Record<string, string>;
+    const db = await collections;
 
     if (req.method === 'GET') {
         res.send(await getSettings(meetingId as string));
     } else if (req.method === 'PUT') {
         const session = await getSession({ req });
-        let meetingDetails: any = null;
+
+        let meetingDetails: ZoomMeeting | null = null;
         if (session) {
             try {
                 meetingDetails = await zoomApi(session['uid'], `/meetings/${meetingId}`);
@@ -43,10 +41,10 @@ const Settings: NextApiHandler = async (req, res) => {
         }
 
         const record = {
-            for: meetingId,
+            meetingId: meetingId,
             ...req.body,
         };
-        await db.updateOne({ for: meetingId }, { $set: record }, { upsert: true });
+        await db.settings.updateOne({ meetingId }, { $set: record }, { upsert: true });
         res.send(record);
     } else {
         res.status(400).end();
