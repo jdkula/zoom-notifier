@@ -14,7 +14,7 @@ const Page = styled.div`
 `;
 
 const Root: FC<{ title?: string }> = ({ children, title }) => {
-    const [session, loading] = useSession();
+    const [session] = useSession();
 
     const doLogOut = () => {
         return signOut();

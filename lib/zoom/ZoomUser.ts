@@ -1,0 +1,33 @@
+export default interface ZoomUser {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+    type: number;
+    role_name: string;
+    pmi: number;
+    use_pmi: boolean;
+    timezone: string;
+    dept: string;
+    created_at: string;
+    last_login_time: string;
+    last_client_version: string;
+    language: string;
+    phone_country: string;
+    phone_number: string;
+    vanity_url: string;
+    personal_meeting_url: string;
+    verified: number;
+    pic_url: string;
+    cms_user_id: string;
+    account_id: string;
+    host_key: string;
+    status: string;
+    group_ids: string[];
+    im_group_ids: string[];
+    jid: string;
+    job_title: string;
+    company: string;
+    location: string;
+    custom_attributes: Record<string, { key: string; name: string; value: string }>;
+}

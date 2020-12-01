@@ -1,6 +1,6 @@
 import Axios from 'axios';
 import base64 from './base64';
-import mongo, { collections } from './mongo';
+import { collections } from './mongo';
 
 const ZOOM_API_ROOT = 'https://api.zoom.us/v2';
 const ZOOM_REFRESH_ENDPOINT = 'https://zoom.us/oauth/token';
@@ -33,7 +33,7 @@ const refreshAccess = async (uid: string, refreshToken: string): Promise<string>
     return tokens.access_token;
 };
 
-const zoomApi = async <T = any>(uid: string, endpoint: string): Promise<T> => {
+const zoomApi = async <T = never>(uid: string, endpoint: string): Promise<T> => {
     const db = await collections;
     const accts = await db.accounts.findOne({ _id: uid });
     if (!accts) return null;

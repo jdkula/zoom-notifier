@@ -11,14 +11,13 @@ import {
 } from '@material-ui/core';
 import { ExpandMore } from '@material-ui/icons';
 import Axios from 'axios';
-import { error } from 'console';
 import { useSnackbar } from 'notistack';
 import React, { FC, useState } from 'react';
 import NotifyPrefs from '~/lib/NotifyPrefs';
 import ContactInformation from './ContactInformation';
 import SubscriptionSettings from './SubscriptionSettings';
 
-const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingId, name }) => {
+const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingId }) => {
     const { enqueueSnackbar } = useSnackbar();
     const [contactOpen, setContactOpen] = useState(false);
     const [contactEntered, setContactEntered] = useState(false);
