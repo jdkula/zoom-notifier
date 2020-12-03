@@ -85,8 +85,8 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
             setNotifyPrefs({
                 start: true,
                 end: true,
-                each_join: false,
-                each_leave: false,
+                join: false,
+                leave: false,
             });
             setNewSub(true);
         } finally {

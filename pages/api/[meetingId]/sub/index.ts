@@ -11,9 +11,14 @@ const Sub: NextApiHandler<Subscription> = async (req, res) => {
     }
     const { meetingId } = req.query as Record<string, string>;
 
-    const record = {
-        ...req.body,
+    const record: Subscription = {
         meetingId,
+        phone: req.body.phone,
+        email: req.body.email,
+        join: req.body.join,
+        leave: req.body.leave,
+        end: req.body.end || req.body.leave,
+        start: req.body.start || req.body.join,
     };
 
     const { upsertedCount } = await db.subscriptions.updateOne(

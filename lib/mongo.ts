@@ -14,11 +14,6 @@ export interface Subscription extends NotifyPrefs {
     email: string;
     meetingId: string;
     phone: boolean;
-
-    start: boolean;
-    end: boolean;
-    each_join: boolean;
-    each_leave: boolean;
 }
 
 export interface Setting {
@@ -26,6 +21,7 @@ export interface Setting {
     name: string;
     url: string;
     meetingId: string;
+    seriousMessagesOnly: boolean;
 }
 
 export interface Account {

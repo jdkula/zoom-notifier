@@ -1,5 +1,17 @@
 import React, { ReactElement, useEffect, useState } from 'react';
-import { Box, Button, Card, CardContent, CircularProgress, TextField, Typography } from '@material-ui/core';
+import {
+    Box,
+    Button,
+    Card,
+    CardContent,
+    Checkbox,
+    CircularProgress,
+    FormControlLabel,
+    FormLabel,
+    TextField,
+    Tooltip,
+    Typography,
+} from '@material-ui/core';
 
 import Axios from 'axios';
 import { useSnackbar } from 'notistack';
@@ -10,12 +22,14 @@ import { getSession } from 'next-auth/client';
 import zoomApi from '~/lib/zoomApi';
 import { useRouter } from 'next/router';
 import ZoomMeeting from '~/lib/zoom/ZoomMeeting';
+import { Setting } from '~/lib/mongo';
 
-const MeetingSettingsInner = ({ meetingId, name, url }: { meetingId: string; name: string; url: string }) => {
+const MeetingSettingsInner = ({ setting }: { setting: Setting }) => {
     const { enqueueSnackbar } = useSnackbar();
 
-    const [meetingName, setMeetingName] = useState(name);
-    const [meetingUrl, setMeetingUrl] = useState(url);
+    const [meetingName, setMeetingName] = useState(setting.name);
+    const [meetingUrl, setMeetingUrl] = useState(setting.url);
+    const [seriousOnly, setSeriousOnly] = useState(setting.seriousMessagesOnly);
 
     const [working, setWorking] = useState(false);
 
@@ -25,19 +39,21 @@ const MeetingSettingsInner = ({ meetingId, name, url }: { meetingId: string; nam
     };
 
     const onError = () => {
-        enqueueSnackbar("Couldn't subscribe!", { variant: 'error' });
+        enqueueSnackbar('Error changing settings!', { variant: 'error' });
         setWorking(false);
     };
 
     const saveSettings = () => {
         setWorking(true);
-        Axios.put(`/api/${meetingId}/settings`, { name: meetingName, url: meetingUrl }).then(finish).catch(onError);
+        Axios.put(`/api/${setting.meetingId}/settings`, { name: meetingName, url: meetingUrl })
+            .then(finish)
+            .catch(onError);
     };
 
     return (
         <>
             <Typography variant="h5" gutterBottom>
-                Settings for {meetingId}
+                Settings for {setting.meetingId}
             </Typography>
             <TextField
                 label="Meeting Name"
@@ -56,6 +72,18 @@ const MeetingSettingsInner = ({ meetingId, name, url }: { meetingId: string; nam
                 onChange={(e) => setMeetingUrl(e.target.value)}
                 variant="outlined"
             />
+            <div>
+                <Tooltip
+                    arrow
+                    placement="left"
+                    title="We randomize fun messages with each notification. You can disable that if you want."
+                >
+                    <FormControlLabel
+                        label="Serious messages only"
+                        control={<Checkbox checked={seriousOnly} onChange={(e) => setSeriousOnly(e.target.checked)} />}
+                    />
+                </Tooltip>
+            </div>
             <Box m={2} />
             <Button fullWidth color="primary" variant="contained" onClick={saveSettings} disabled={working}>
                 {working ? <CircularProgress /> : 'Save'}
@@ -64,12 +92,7 @@ const MeetingSettingsInner = ({ meetingId, name, url }: { meetingId: string; nam
     );
 };
 
-export default function MeetingSettings(props: {
-    meetingId: string;
-    name: string;
-    url: string;
-    access: boolean;
-}): ReactElement {
+export default function MeetingSettings(props: { setting: Setting; access: boolean }): ReactElement {
     const { enqueueSnackbar } = useSnackbar();
     const router = useRouter();
 
@@ -81,7 +104,7 @@ export default function MeetingSettings(props: {
     }, [props.access]);
 
     return (
-        <Root title={`Zoom Notifier: Settings for ${props.name}`}>
+        <Root title={`Zoom Notifier: Settings for ${props.setting.name}`}>
             <Card elevation={10}>
                 <CardContent>{props.access ? <MeetingSettingsInner {...props} /> : <CircularProgress />}</CardContent>
             </Card>
@@ -111,8 +134,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     return {
         props: {
             meetingId,
-            name: settings.name,
-            url: settings.url,
+            setting: settings,
             access: true,
         },
     };

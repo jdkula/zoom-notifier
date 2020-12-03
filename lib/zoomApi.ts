@@ -8,7 +8,9 @@ const ZOOM_REFRESH_ENDPOINT = 'https://zoom.us/oauth/token';
 const getEndpoint = <T>(accessToken: string, endpoint: string): Promise<T> => {
     return Axios.get(ZOOM_API_ROOT + endpoint, {
         headers: { Authorization: `Bearer ${accessToken}` },
-    }).then((resp) => resp.data);
+    })
+        .then((resp) => resp.data)
+        .catch((e) => console.warn(e));
 };
 
 const refreshAccess = async (uid: string, refreshToken: string): Promise<string> => {

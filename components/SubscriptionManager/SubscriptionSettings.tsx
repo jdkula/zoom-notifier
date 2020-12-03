@@ -8,15 +8,15 @@ const SubscriptionSettings: FC<{ prefs: NotifyPrefs; updatePrefs: (newPrefs: Not
 }) => {
     const [start, setStart] = useState(prefs.start);
     const [end, setEnd] = useState(prefs.end);
-    const [eachJoin, setEachJoin] = useState(prefs.each_join);
-    const [eachLeave, setEachLeave] = useState(prefs.each_leave);
+    const [eachJoin, setEachJoin] = useState(prefs.join);
+    const [eachLeave, setEachLeave] = useState(prefs.leave);
 
     useEffect(() => {
         updatePrefs({
             start,
             end,
-            each_join: eachJoin,
-            each_leave: eachLeave,
+            join: eachJoin,
+            leave: eachLeave,
         });
     }, [start, end, eachJoin, eachLeave]);
 

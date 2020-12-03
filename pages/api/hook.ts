@@ -1,99 +1,69 @@
 import { NextApiHandler } from 'next';
+import { Match, MessageType, prepareMessages } from '~/lib/messages';
 import { collections } from '~/lib/mongo';
 
 import { sendEmail } from '../../lib/sendEmail';
 
-const PARTICIPANT_JOINED = 'meeting.participant_joined';
-const PARTICIPANT_LEFT = 'meeting.participant_left';
+enum Event {
+    PARTICIPANT_JOINED = 'meeting.participant_joined',
+    PARTICIPANT_LEFT = 'meeting.participant_left',
+}
 
-async function notify(event: string, id: string, name: string, uid: string) {
+function prepareEmail(match: Match): [string, string, string | undefined] {
+    const { email, message, phone } = match;
+    const subject = phone ? undefined : message + ' EOM';
+
+    return [email, message, subject];
+}
+
+const eventMapping = {
+    [Event.PARTICIPANT_JOINED]: '$addToSet',
+    [Event.PARTICIPANT_LEFT]: '$pull',
+};
+const deltas = {
+    [Event.PARTICIPANT_JOINED]: +1,
+    [Event.PARTICIPANT_LEFT]: -1,
+};
+async function updateMeeting(event: Event, meetingId: string, userId: string): Promise<number | null> {
     const db = await collections;
 
-    let currentParticipants: number;
-    if (event === PARTICIPANT_JOINED) {
-        const meeting = await db.meetings.findOneAndUpdate(
-            { _id: id },
-            { $addToSet: { participants: uid } },
-            { returnOriginal: true, upsert: true },
-        );
-        if ((meeting.value?.participants ?? []).includes(uid)) return; // duplicate notifiaction – already joined
-        currentParticipants = (meeting.value?.participants?.length ?? 0) + 1; // account for new participant
-    } else if (event === PARTICIPANT_LEFT) {
-        const meeting = await db.meetings.findOneAndUpdate(
-            { _id: id },
-            { $pull: { participants: uid } },
-            { returnOriginal: true, upsert: true },
-        );
-        if (!(meeting.value?.participants ?? []).includes(uid)) return; // duplicate notification – already left
-        currentParticipants = (meeting.value?.participants?.length ?? 1) - 1;
+    const meeting = await db.meetings.findOneAndUpdate(
+        { _id: meetingId },
+        { [eventMapping[event]]: { participants: userId } },
+        { returnOriginal: true, upsert: true },
+    );
+
+    const participants = meeting.value?.participants ?? [];
+
+    if (
+        (event === Event.PARTICIPANT_JOINED && participants.includes(userId)) ||
+        (event === Event.PARTICIPANT_LEFT && !participants.includes(userId))
+    ) {
+        return null; // duplicate notification!
     }
 
-    const subscriptions = await db.subscriptions.find({ meetingId: id }).toArray();
-    const settings = await db.settings.findOne({ meetingId: id });
+    return participants.length + deltas[event];
+}
 
+async function notify(event: Event, meetingId: string, name: string, userId: string): Promise<void> {
+    const db = await collections;
+
+    const currentParticipants = await updateMeeting(event, meetingId, userId);
+    if (currentParticipants === null) return;
+
+    const settings = await db.settings.findOne({ meetingId });
     if (!settings) return;
 
-    const promises = [];
-
-    for (const subscription of subscriptions) {
-        if (
-            event === PARTICIPANT_JOINED &&
-            (subscription.each_join || (subscription.start && currentParticipants === 1))
-        ) {
-            if (currentParticipants === 1) {
-                promises.push(
-                    sendEmail(
-                        subscription.email,
-                        `${name ?? 'Someone'} just joined ${settings.name}! Join at ${settings.url}`,
-                        subscription.phone ? undefined : `${name ?? 'Someone'} just joined ${settings.name}!`,
-                    ).catch(() => console.warn('Failed...')),
-                );
-            } else {
-                promises.push(
-                    sendEmail(
-                        subscription.email,
-                        `${name ?? 'Someone'} just joined ${
-                            settings.name
-                        } (now at ${currentParticipants} people)! Join at ${settings.url}`,
-                        subscription.phone ? undefined : `${name ?? 'Someone'} just joined ${settings.name}!`,
-                    ).catch(() => console.warn('Failed...')),
-                );
-            }
-        } else if (event === PARTICIPANT_LEFT && subscription.each_leave) {
-            if (currentParticipants !== 0) {
-                promises.push(
-                    sendEmail(
-                        subscription.email,
-                        `${name ?? 'Someone'} just left ${settings.name}. ${currentParticipants} remain${
-                            currentParticipants === 1 ? 's' : ''
-                        }. Join at ${settings.url}`,
-                        subscription.phone ? undefined : `${name ?? 'Someone'} just left ${settings.name}!`,
-                    ).catch(() => console.log('Failed...')),
-                );
-            } else {
-                promises.push(
-                    sendEmail(
-                        subscription.email,
-                        `${name ?? 'Someone'} just left ${settings.name}. Nobody's left.`,
-                        subscription.phone ? undefined : `Nobody's left in ${settings.name}.`,
-                    ).catch(() => console.log('Failed...')),
-                );
-            }
-        } else if (
-            event === PARTICIPANT_LEFT &&
-            subscription.end &&
-            currentParticipants === 0 &&
-            !subscription.each_leave
-        ) {
-            promises.push(
-                sendEmail(
-                    subscription.email,
-                    `Nobody's left in ${settings.name}.`,
-                    subscription.phone ? undefined : `Nobody's left in ${settings.name}.`,
-                ).catch(() => console.log('Failed...')),
-            );
-        }
+    let type: MessageType;
+    if (event === Event.PARTICIPANT_JOINED) {
+        type = currentParticipants === 1 ? MessageType.START : MessageType.JOIN;
+    } else {
+        type = currentParticipants === 0 ? MessageType.END : MessageType.LEAVE;
     }
+
+    const promises = (await prepareMessages(type, settings, name, currentParticipants))
+        .map((match) => prepareEmail(match))
+        .map((args) => sendEmail(...args));
 
     await Promise.all(promises);
 }
