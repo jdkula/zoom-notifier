@@ -45,7 +45,11 @@ const MeetingSettingsInner = ({ setting }: { setting: Setting }) => {
 
     const saveSettings = () => {
         setWorking(true);
-        Axios.put(`/api/${setting.meetingId}/settings`, { name: meetingName, url: meetingUrl })
+        Axios.put(`/api/${setting.meetingId}/settings`, {
+            name: meetingName,
+            url: meetingUrl,
+            seriousMessagesOnly: seriousOnly,
+        })
             .then(finish)
             .catch(onError);
     };
@@ -76,10 +80,10 @@ const MeetingSettingsInner = ({ setting }: { setting: Setting }) => {
                 <Tooltip
                     arrow
                     placement="left"
-                    title="We randomize fun messages with each notification. You can disable that if you want."
+                    title="We randomize fun messages for each notification. You can disable the more outlandish ones, if you want."
                 >
                     <FormControlLabel
-                        label="Serious messages only"
+                        label="Serious notifications only"
                         control={<Checkbox checked={seriousOnly} onChange={(e) => setSeriousOnly(e.target.checked)} />}
                     />
                 </Tooltip>

@@ -40,9 +40,11 @@ const Settings: NextApiHandler = async (req, res) => {
             return res.status(401).end('Not authorized to access this meeting');
         }
 
-        const record = {
+        const record: Setting = {
             meetingId: meetingId,
-            ...req.body,
+            name: req.body.name,
+            url: req.body.url,
+            seriousMessagesOnly: req.body.seriousMessagesOnly,
         };
         await db.settings.updateOne({ meetingId }, { $set: record }, { upsert: true });
         res.send(record);
