@@ -1,5 +1,4 @@
-import { collections, Setting, Subscription } from './mongo';
-import { sendEmail } from './sendEmail';
+import { collections, Setting } from './mongo';
 
 export enum MessageType {
     START = 'start',
@@ -12,7 +11,7 @@ export type Match = { email: string; message: string; phone: boolean };
 
 function replaceMatches(s: string, replacements: Record<string, string>): string {
     for (const key of Object.keys(replacements)) {
-        s = s.replaceAll(new RegExp('\\$\\{\\s*?' + key + '\\s*?\\}', 'g'), replacements[key]);
+        s = s.replace(new RegExp('\\$\\{\\s*?' + key + '\\s*?\\}', 'g'), replacements[key]);
     }
     return s;
 }
