@@ -16,6 +16,12 @@ const CarrierSelect = styled(FormControl)`
     min-width: 200px;
 `;
 
+// Thank you https://emailregex.com/
+const isEmailValid = (email: string) =>
+    !!/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.exec(
+        email,
+    );
+
 const ContactInformation: FC<{ setEmail: (email: string | null, isPhone: boolean, preloaded?: true) => void }> = ({
     setEmail: updateEmail,
 }) => {
@@ -24,6 +30,8 @@ const ContactInformation: FC<{ setEmail: (email: string | null, isPhone: boolean
     const [carrier, setCarrier] = useState<null | string>(null);
 
     const [phoneValid, setPhoneValid] = useState(false);
+
+    const emailValid = isEmailValid(email);
 
     useEffect(() => {
         if (phone) {
@@ -72,7 +80,7 @@ const ContactInformation: FC<{ setEmail: (email: string | null, isPhone: boolean
 
     const updateProxy = (forceContinue: boolean) => {
         const isPhone = !!phone && !!carrier;
-        const isValid = (!!isPhone && !!phoneValid) || (!!email && !phone);
+        const isValid = emailValid && ((isPhone && phoneValid) || (!!email && !phone));
         updateEmail(isValid ? email : null, isPhone, forceContinue || undefined);
     };
 
@@ -83,7 +91,7 @@ const ContactInformation: FC<{ setEmail: (email: string | null, isPhone: boolean
 
     useEffect(() => {
         updateProxy(false);
-    }, [email]);
+    }, [email, emailValid]);
 
     useEffect(() => {
         window.localStorage.setItem('phone', phone);
@@ -133,6 +141,7 @@ const ContactInformation: FC<{ setEmail: (email: string | null, isPhone: boolean
                     variant="outlined"
                     label="Email"
                     value={email}
+                    error={!emailValid}
                     fullWidth
                     onChange={(e) => setEmail(e.target.value)}
                 />

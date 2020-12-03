@@ -29,6 +29,7 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
     const [notifyPrefs, setNotifyPrefs] = useState<NotifyPrefs | null>(null);
 
     const emailUpdate = (email: string | null, isPhone: boolean, preloaded?: true) => {
+        setContactEntered(false);
         if (email === null) {
             setEmail('');
         } else {
@@ -108,11 +109,9 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
                     <AccordionSummary expandIcon={<ExpandMore />} aria-controls="step1-content" id="step1-content">
                         <Box>
                             <Typography display="block">Step 1: Contact information</Typography>
-                            {contactEntered && (
-                                <Typography variant="caption" color="textSecondary">
-                                    {email}
-                                </Typography>
-                            )}
+                            <Typography variant="caption" color="textSecondary">
+                                {contactEntered ? email : 'Enter your contact information below.'}
+                            </Typography>
                         </Box>
                     </AccordionSummary>
                     <AccordionDetails>
@@ -150,7 +149,7 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
                                 Update Subscription
                             </Button>
                             <Box m={1} component="span" />
-                            <Button variant="outlined" color="secondary" disabled={!email} onClick={unsubscribe}>
+                            <Button variant="outlined" color="secondary" onClick={unsubscribe}>
                                 Unsubscribe
                             </Button>
                         </Box>
