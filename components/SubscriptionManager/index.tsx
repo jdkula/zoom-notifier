@@ -29,7 +29,6 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
     const [notifyPrefs, setNotifyPrefs] = useState<NotifyPrefs | null>(null);
 
     const emailUpdate = (email: string | null, isPhone: boolean, preloaded?: true) => {
-        console.log(email, isPhone, preloaded);
         if (email === null) {
             setEmail('');
         } else {
@@ -91,6 +90,7 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
             setNewSub(true);
         } finally {
             setContactEntered(true);
+            setContactOpen(false);
             setWorking(false);
         }
     };

@@ -15,6 +15,7 @@
     "dependencies": {
         "@material-ui/core": "^4.11.1",
         "@material-ui/icons": "^4.9.1",
+        "@material-ui/lab": "^4.0.0-alpha.57",
         "@types/axios": "^0.14.0",
         "@types/google-libphonenumber": "^7.4.19",
         "@types/mailgun-js": "^0.22.11",
