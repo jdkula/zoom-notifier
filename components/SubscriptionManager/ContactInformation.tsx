@@ -90,9 +90,9 @@ const ContactInformation: FC<{ setEmail: (email: string | null, isPhone: boolean
                         error={phoneValid && phone !== '' && !carrier}
                         onChange={(e) => setCarrier(e.target.value as string)}
                     >
-                        <MenuItem value="vtext.com">Verizon</MenuItem>
-                        <MenuItem value="txt.att.net">AT{'&'}T</MenuItem>
-                        <MenuItem value="messaging.sprintpcs.com">Sprint</MenuItem>
+                        <MenuItem value="vzwpix.com">Verizon</MenuItem>
+                        <MenuItem value="mms.att.net">AT{'&'}T</MenuItem>
+                        <MenuItem value="pm.sprint.com">Sprint</MenuItem>
                         <MenuItem value="tmomail.net">T-Mobile</MenuItem>
                         <MenuItem value="msg.fi.google.com">Google Fi</MenuItem>
                         <MenuItem value="mms.cricketwireless.net">Cricket Wireless</MenuItem>
