@@ -76,7 +76,7 @@ const Sub: NextApiHandler = async (req, res) => {
         const sub = await getSub({
             meetingId,
             phone: (req.query.phone as string | undefined) || null,
-            carrier: (req.query.carrier as any | undefined) || null,
+            carrier: (req.query.carrier as Subscription['carrier'] | undefined) || null,
             email: (req.query.email as string | undefined) || null,
         });
         if (!sub) {

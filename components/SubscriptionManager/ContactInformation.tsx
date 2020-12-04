@@ -1,4 +1,4 @@
-import { CardContent, Box, TextField, InputLabel, Select, MenuItem, FormControl } from '@material-ui/core';
+import { CardContent, Box, TextField, FormControl } from '@material-ui/core';
 import React, { FC, SyntheticEvent, useEffect, useState } from 'react';
 import { PhoneNumberUtil } from 'google-libphonenumber';
 import styled from 'styled-components';
@@ -18,7 +18,7 @@ const CarrierSelect = styled(FormControl)`
 
 // Thank you https://emailregex.com/
 const isEmailValid = (email: string) =>
-    !!/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.exec(
+    !!/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.exec(
         email,
     );
 
