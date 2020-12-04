@@ -14,7 +14,7 @@ export type Match = {
     ifttt: string | null;
     carrier: keyof typeof CarrierMappings | null;
     message: string;
-    url: string;
+    url: string | null;
     room: string;
 };
 
@@ -79,7 +79,7 @@ export async function prepareMessages(
     return matches.map((match) => ({
         ...match,
         message: replaceMatches(match.message, replacements),
-        url: replacements.url,
+        url: type === MessageType.END ? null : replacements.url,
         room: replacements.room,
     }));
 }

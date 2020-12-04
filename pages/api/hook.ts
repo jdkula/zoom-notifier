@@ -19,7 +19,9 @@ function prepareEmail(match: Match): [string, string, string | undefined] | null
     const to = email ?? phoneToEmail(phone, carrier);
     const subject = phone ? undefined : message;
 
-    return [to, message + ' Join at ' + url, subject];
+    const messageWithJoin = match.url ? message : `${message} Join at: ${url}`;
+
+    return [to, messageWithJoin, subject];
 }
 
 async function notifyIfttt(match: Match): Promise<void> {
@@ -30,7 +32,7 @@ async function notifyIfttt(match: Match): Promise<void> {
     await Axios.post(`https://maker.ifttt.com/trigger/zoom_notification/with/key/${ifttt}`, {
         value1: message,
         value2: room,
-        value3: url,
+        ...(url && { value3: url }),
     });
 }
 
