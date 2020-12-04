@@ -16,7 +16,7 @@ import React, { FC, useEffect, useState } from 'react';
 import NotifyPrefs from '~/lib/NotifyPrefs';
 import ContactInformation from './ContactInformation';
 import SubscriptionSettings from './SubscriptionSettings';
-import CarrierMapping from '~/lib/carriers.json';
+import { phoneToEmail } from '~/lib/phone';
 
 const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingId }) => {
     const { enqueueSnackbar } = useSnackbar();
@@ -29,7 +29,7 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
     const hasContactInformation = !!email || (!!phone && !!carrier);
     let contactEmail: string | null = null;
     if (hasContactInformation) {
-        contactEmail = email ? email : phone + CarrierMapping[carrier];
+        contactEmail = email ? email : phoneToEmail(phone, carrier);
     }
 
     const [newSub, setNewSub] = useState(true);
@@ -109,7 +109,7 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
 
     let subtitle: string;
     if (contactEntered && phone && carrier) {
-        subtitle = phone + CarrierMapping[carrier];
+        subtitle = phoneToEmail(phone, carrier);
     } else if (contactEntered && email) {
         subtitle = email;
     } else {
