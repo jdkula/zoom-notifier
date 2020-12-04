@@ -56,9 +56,9 @@ const ContactInformation: FC<ContactInformationProps> = ({
     }, [phone]);
 
     useEffect(() => {
-        const phone = window.localStorage.getItem('phone');
-        const carrier = window.localStorage.getItem('carrier');
-        const email = window.localStorage.getItem('email');
+        const phone = window.localStorage.getItem('__ZN_phone');
+        const carrier = window.localStorage.getItem('__ZN_carrier');
+        const email = window.localStorage.getItem('__ZN_email');
         setPhone(phone ?? '');
         if (carrierOptions.includes(carrier)) {
             setCarrier(carrier);
@@ -117,9 +117,9 @@ const ContactInformation: FC<ContactInformationProps> = ({
     }, [email, phoneValid, emailValid, phone, carrier]);
 
     useEffect(() => {
-        window.localStorage.setItem('phone', phone);
-        window.localStorage.setItem('carrier', carrier);
-        window.localStorage.setItem('email', email);
+        window.localStorage.setItem('__ZN_phone', phone);
+        window.localStorage.setItem('__ZN_carrier', carrier);
+        window.localStorage.setItem('__ZN_email', email);
     }, [phone, email, carrier]);
 
     return (
