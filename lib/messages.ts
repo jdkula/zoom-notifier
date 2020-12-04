@@ -64,6 +64,12 @@ export async function prepareMessages(
         name: name,
         current: currentParticipants.toString(),
         previous: (currentParticipants + delta).toString(),
+        curSingular: currentParticipants === 1 ? 's' : '',
+        curPlural: currentParticipants === 1 ? '' : 's',
+        prevSingular: currentParticipants + delta === 1 ? 's' : '',
+        prevPlural: currentParticipants + delta === 1 ? '' : 's',
+        curPeople: currentParticipants === 1 ? 'person' : 'people',
+        prevPeople: currentParticipants + delta === 1 ? 'person' : 'people',
     };
 
     return matches.map((match) => ({
