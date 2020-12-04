@@ -1,5 +1,6 @@
 import { MongoClient } from 'mongodb';
 import NotifyPrefs from './NotifyPrefs';
+import CarrierMappings from '~/lib/carriers.json';
 
 const client = new MongoClient(process.env.MONGO_URL, { useNewUrlParser: true, useUnifiedTopology: true });
 
@@ -11,9 +12,10 @@ export default mongo;
 
 export interface Subscription extends NotifyPrefs {
     _id?: never;
-    email: string;
+    email: string | null;
+    phone: string | null;
+    carrier: keyof typeof CarrierMappings | null;
     meetingId: string;
-    phone: boolean;
 }
 
 export interface Setting {
@@ -22,6 +24,7 @@ export interface Setting {
     url: string;
     meetingId: string;
     seriousMessagesOnly: boolean;
+    shorten: boolean;
 }
 
 export interface Account {

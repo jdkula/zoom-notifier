@@ -12,34 +12,44 @@ import {
 import { ExpandMore } from '@material-ui/icons';
 import Axios from 'axios';
 import { useSnackbar } from 'notistack';
-import React, { FC, useState } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 import NotifyPrefs from '~/lib/NotifyPrefs';
 import ContactInformation from './ContactInformation';
 import SubscriptionSettings from './SubscriptionSettings';
+import CarrierMapping from '~/lib/carriers.json';
 
 const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingId }) => {
     const { enqueueSnackbar } = useSnackbar();
+    const [email, setEmail] = useState<string | null>(null);
+    const [phone, setPhone] = useState<string | null>(null);
+    const [carrier, setCarrier] = useState<string | null>(null);
+
     const [contactOpen, setContactOpen] = useState(false);
     const [contactEntered, setContactEntered] = useState(false);
-    const [email, setEmail] = useState('');
-    const [phone, setPhone] = useState(false);
+    const hasContactInformation = !!email || (!!phone && !!carrier);
+    let contactEmail: string | null = null;
+    if (hasContactInformation) {
+        contactEmail = email ? email : phone + CarrierMapping[carrier];
+    }
 
     const [newSub, setNewSub] = useState(true);
-
     const [notifyPrefs, setNotifyPrefs] = useState<NotifyPrefs | null>(null);
+    const [working, setWorking] = useState(false);
 
-    const emailUpdate = (email: string | null, isPhone: boolean, preloaded?: true) => {
-        setContactEntered(false);
-        if (email === null) {
-            setEmail('');
-        } else {
-            setEmail(email);
-            if (preloaded) getSubInfo(email);
+    const preloadContactInfo = (email: string | null, phone: string | null, carrier: string | null) => {
+        setEmail(email);
+        setPhone(phone);
+        setCarrier(carrier);
+        if (email || (phone && carrier)) {
+            setContactEntered(true);
+            setContactOpen(false);
         }
-        setPhone(isPhone);
     };
 
-    const [working, setWorking] = useState(false);
+    useEffect(() => {
+        setContactEntered(false);
+        setContactOpen(false);
+    }, [email, phone, carrier]);
 
     const subscribe = async () => {
         setWorking(true);
@@ -47,6 +57,7 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
             await Axios.post(`/api/${meetingId}/sub`, {
                 email,
                 phone,
+                carrier,
                 ...notifyPrefs,
             });
             enqueueSnackbar('Subscribed!', { variant: 'success' });
@@ -61,7 +72,7 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
     const unsubscribe = async () => {
         setWorking(true);
         try {
-            await Axios.delete(`/api/${meetingId}/sub/${email}`);
+            await Axios.delete(`/api/${meetingId}/sub`, { data: { email, phone, carrier } });
             enqueueSnackbar('Unsubscribed!', { variant: 'success' });
             setNewSub(true);
             setContactEntered(false);
@@ -74,10 +85,10 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
         }
     };
 
-    const getSubInfo = async (email) => {
+    const getSubInfo = async (email, phone, carrier) => {
         setWorking(true);
         try {
-            const { data } = await Axios.get(`/api/${meetingId}/sub/${email}`);
+            const { data } = await Axios.get(`/api/${meetingId}/sub`, { params: { email, phone, carrier } });
 
             setNotifyPrefs(data);
             setNewSub(false);
@@ -96,6 +107,15 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
         }
     };
 
+    let subtitle: string;
+    if (contactEntered && phone && carrier) {
+        subtitle = phone + CarrierMapping[carrier];
+    } else if (contactEntered && email) {
+        subtitle = email;
+    } else {
+        subtitle = 'Enter your contact information below.';
+    }
+
     return (
         <Card elevation={10}>
             <CardContent>
@@ -110,17 +130,17 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
                         <Box>
                             <Typography display="block">Step 1: Contact information</Typography>
                             <Typography variant="caption" color="textSecondary">
-                                {contactEntered ? email : 'Enter your contact information below.'}
+                                {contactEntered ? subtitle : 'Enter your contact information below.'}
                             </Typography>
                         </Box>
                     </AccordionSummary>
                     <AccordionDetails>
-                        <ContactInformation setEmail={emailUpdate} />
+                        <ContactInformation {...{ setEmail, setPhone, setCarrier }} preload={preloadContactInfo} />
                     </AccordionDetails>
                 </Accordion>
                 <Accordion
-                    expanded={contactEntered && email && !contactOpen}
-                    disabled={!contactEntered || !email}
+                    expanded={contactEntered && hasContactInformation && !contactOpen}
+                    disabled={!contactEntered || !hasContactInformation}
                     onChange={(_, expanded) => setContactOpen(!expanded)}
                 >
                     <AccordionSummary expandIcon={<ExpandMore />} aria-controls="step2-content" id="step2-content">
@@ -158,8 +178,8 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
                     <Button
                         variant="contained"
                         color="primary"
-                        disabled={!email}
-                        onClick={() => getSubInfo(email)}
+                        disabled={!hasContactInformation}
+                        onClick={() => getSubInfo(email, phone, carrier)}
                         fullWidth
                     >
                         Continue

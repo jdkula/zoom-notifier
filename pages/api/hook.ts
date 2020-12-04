@@ -4,16 +4,19 @@ import { collections } from '~/lib/mongo';
 
 import { sendEmail } from '../../lib/sendEmail';
 
+import CarrierMappings from '~/lib/carriers.json';
+
 enum Event {
     PARTICIPANT_JOINED = 'meeting.participant_joined',
     PARTICIPANT_LEFT = 'meeting.participant_left',
 }
 
 function prepareEmail(match: Match): [string, string, string | undefined] {
-    const { email, message, phone } = match;
+    const { email, message, phone, carrier } = match;
+    const to = email ?? phone + CarrierMappings[carrier];
     const subject = phone ? undefined : message + ' EOM';
 
-    return [email, message, subject];
+    return [to, message, subject];
 }
 
 const eventMapping = {

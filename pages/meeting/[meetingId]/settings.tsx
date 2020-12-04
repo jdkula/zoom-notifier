@@ -30,6 +30,7 @@ const MeetingSettingsInner = ({ setting }: { setting: Setting }) => {
     const [meetingName, setMeetingName] = useState(setting.name);
     const [meetingUrl, setMeetingUrl] = useState(setting.url);
     const [seriousOnly, setSeriousOnly] = useState(setting.seriousMessagesOnly);
+    const [shorten, setShorten] = useState(setting.shorten);
 
     const [working, setWorking] = useState(false);
 
@@ -49,6 +50,7 @@ const MeetingSettingsInner = ({ setting }: { setting: Setting }) => {
             name: meetingName,
             url: meetingUrl,
             seriousMessagesOnly: seriousOnly,
+            shorten: shorten,
         })
             .then(finish)
             .catch(onError);
@@ -85,6 +87,18 @@ const MeetingSettingsInner = ({ setting }: { setting: Setting }) => {
                     <FormControlLabel
                         label="Serious notifications only"
                         control={<Checkbox checked={seriousOnly} onChange={(e) => setSeriousOnly(e.target.checked)} />}
+                    />
+                </Tooltip>
+            </div>
+            <div>
+                <Tooltip
+                    arrow
+                    placement="left"
+                    title="We can shorten your meeting URL so it fits in standard text messages."
+                >
+                    <FormControlLabel
+                        label="Shorten URL"
+                        control={<Checkbox checked={shorten} onChange={(e) => setShorten(e.target.checked)} />}
                     />
                 </Tooltip>
             </div>

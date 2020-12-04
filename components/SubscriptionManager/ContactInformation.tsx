@@ -22,8 +22,18 @@ const isEmailValid = (email: string) =>
         email,
     );
 
-const ContactInformation: FC<{ setEmail: (email: string | null, isPhone: boolean, preloaded?: true) => void }> = ({
+interface ContactInformationProps {
+    preload: (email: string | null, phone: string | null, carrier: string | null) => void;
+    setPhone: (phone: string | null) => void;
+    setEmail: (email: string | null) => void;
+    setCarrier: (carrier: string | null) => void;
+}
+
+const ContactInformation: FC<ContactInformationProps> = ({
     setEmail: updateEmail,
+    setPhone: updatePhone,
+    setCarrier: updateCarrier,
+    preload,
 }) => {
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
@@ -32,12 +42,6 @@ const ContactInformation: FC<{ setEmail: (email: string | null, isPhone: boolean
     const [phoneValid, setPhoneValid] = useState(false);
 
     const emailValid = isEmailValid(email);
-
-    useEffect(() => {
-        if (phone) {
-            setEmail(phone + (CarrierMappings[carrier] ?? ''));
-        }
-    }, [phone, carrier]);
 
     useEffect(() => {
         if (phone === '') {
@@ -52,14 +56,14 @@ const ContactInformation: FC<{ setEmail: (email: string | null, isPhone: boolean
     }, [phone]);
 
     useEffect(() => {
-        const phone = window.localStorage.getItem('phone') ?? '';
-        const carrier = window.localStorage.getItem('carrier') ?? null;
-        const email = window.localStorage.getItem('email') ?? '';
-        setPhone(phone);
+        const phone = window.localStorage.getItem('phone');
+        const carrier = window.localStorage.getItem('carrier');
+        const email = window.localStorage.getItem('email');
+        setPhone(phone ?? '');
         if (carrierOptions.includes(carrier)) {
             setCarrier(carrier);
         }
-        setEmail(email);
+        setEmail(email ?? '');
 
         if (phone || carrier) {
             try {
@@ -68,20 +72,26 @@ const ContactInformation: FC<{ setEmail: (email: string | null, isPhone: boolean
                     phone.length === 10 &&
                     phoneUtil.isValidNumberForRegion(phoneUtil.parse(phone, 'US'), 'US')
                 ) {
-                    updateEmail(email, true, true);
+                    preload(email, phone, carrier);
                 }
             } catch (e) {
                 // do nothing
             }
         } else if (email) {
-            updateEmail(email, true, undefined);
+            preload(email, phone, carrier);
         }
     }, []);
 
     const updateProxy = (forceContinue: boolean) => {
         const isPhone = !!phone && !!carrier;
-        const isValid = emailValid && ((isPhone && phoneValid) || (!!email && !phone));
-        updateEmail(isValid ? email : null, isPhone, forceContinue || undefined);
+        const isValid = (isPhone && phoneValid && !!carrier) || (!!email && !isPhone && emailValid);
+        console.log('updateProxy called with', { email, phone, carrier, isPhone, isValid, emailValid, phoneValid });
+        updateEmail(isValid ? email || null : null);
+        updatePhone(isValid ? phone || null : null);
+        updateCarrier(carrier);
+        if (forceContinue) {
+            preload(isValid ? email : null, isValid ? phone : null, carrier);
+        }
     };
 
     const onSubmit = (e: SyntheticEvent<never>) => {
@@ -90,8 +100,20 @@ const ContactInformation: FC<{ setEmail: (email: string | null, isPhone: boolean
     };
 
     useEffect(() => {
+        if (email) {
+            setPhone('');
+            setCarrier(null);
+        }
+    }, [email]);
+    useEffect(() => {
+        if (phone || carrier) {
+            setEmail('');
+        }
+    }, [phone, carrier]);
+
+    useEffect(() => {
         updateProxy(false);
-    }, [email, emailValid]);
+    }, [email, phoneValid, emailValid, phone, carrier]);
 
     useEffect(() => {
         window.localStorage.setItem('phone', phone);
@@ -141,7 +163,7 @@ const ContactInformation: FC<{ setEmail: (email: string | null, isPhone: boolean
                     variant="outlined"
                     label="Email"
                     value={email}
-                    error={!emailValid}
+                    error={!emailValid && (!phoneValid || !carrier)}
                     fullWidth
                     onChange={(e) => setEmail(e.target.value)}
                 />

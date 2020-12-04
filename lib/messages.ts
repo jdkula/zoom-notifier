@@ -1,4 +1,5 @@
 import { collections, Setting } from './mongo';
+import CarrierMappings from '~/lib/carriers.json';
 
 export enum MessageType {
     START = 'start',
@@ -7,7 +8,12 @@ export enum MessageType {
     LEAVE = 'leave',
 }
 
-export type Match = { email: string; message: string; phone: boolean };
+export type Match = {
+    email: string | null;
+    phone: string | null;
+    carrier: keyof typeof CarrierMappings | null;
+    message: string;
+};
 
 function replaceMatches(s: string, replacements: Record<string, string>): string {
     for (const key of Object.keys(replacements)) {
@@ -50,9 +56,10 @@ export async function prepareMessages(
         .toArray();
 
     const delta = type === MessageType.JOIN || type === MessageType.START ? -1 : 1;
+    const shortLink = `https://${process.env.ROOT_DOMAIN}/l/${setting.meetingId}`;
     const replacements = {
         room: setting.name,
-        url: setting.url,
+        url: setting.shorten ? shortLink : setting.url,
         name: name,
         current: currentParticipants.toString(),
         previous: (currentParticipants + delta).toString(),
