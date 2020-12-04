@@ -47,6 +47,7 @@ export async function prepareMessages(
                     _id: 0,
                     email: 1,
                     phone: 1,
+                    carrier: 1,
                     message: {
                         $let: { vars: { message: { $arrayElemAt: ['$messages', 0] } }, in: '$$message.message' },
                     },

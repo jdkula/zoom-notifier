@@ -72,13 +72,14 @@ const ContactInformation: FC<ContactInformationProps> = ({
                     phone.length === 10 &&
                     phoneUtil.isValidNumberForRegion(phoneUtil.parse(phone, 'US'), 'US')
                 ) {
-                    preload(email, phone, carrier);
+                    console.log('Preloading...?');
+                    window.setTimeout(() => preload(email, phone, carrier), 1);
                 }
             } catch (e) {
                 // do nothing
             }
         } else if (email) {
-            preload(email, phone, carrier);
+            window.setTimeout(() => preload(email, phone, carrier), 1);
         }
     }, []);
 

@@ -27,10 +27,6 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
     const [contactOpen, setContactOpen] = useState(false);
     const [contactEntered, setContactEntered] = useState(false);
     const hasContactInformation = !!email || (!!phone && !!carrier);
-    let contactEmail: string | null = null;
-    if (hasContactInformation) {
-        contactEmail = email ? email : phoneToEmail(phone, carrier);
-    }
 
     const [newSub, setNewSub] = useState(true);
     const [notifyPrefs, setNotifyPrefs] = useState<NotifyPrefs | null>(null);
@@ -41,14 +37,14 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
         setPhone(phone);
         setCarrier(carrier);
         if (email || (phone && carrier)) {
-            setContactEntered(true);
-            setContactOpen(false);
+            getSubInfo(email, phone, carrier);
         }
     };
 
     useEffect(() => {
         setContactEntered(false);
         setContactOpen(false);
+        setNotifyPrefs(null);
     }, [email, phone, carrier]);
 
     const subscribe = async () => {

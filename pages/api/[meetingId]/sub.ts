@@ -56,10 +56,6 @@ async function addSub(s: Subscription) {
 }
 
 const Sub: NextApiHandler = async (req, res) => {
-    if (req.method !== 'POST') {
-        res.status(400).end();
-        return;
-    }
     const { meetingId } = req.query as Record<string, string>;
 
     const record = {
@@ -77,7 +73,17 @@ const Sub: NextApiHandler = async (req, res) => {
         await addSub(record);
         res.send(record);
     } else if (req.method === 'GET') {
-        res.send(await getSub(record));
+        const sub = await getSub({
+            meetingId,
+            phone: (req.query.phone as string | undefined) || null,
+            carrier: (req.query.carrier as any | undefined) || null,
+            email: (req.query.email as string | undefined) || null,
+        });
+        if (!sub) {
+            res.status(404).send('Not found.');
+        } else {
+            res.send(sub);
+        }
     } else if (req.method === 'DELETE') {
         const deleted = await delSub(record);
         res.send(deleted ? 'Done' : 'Nothing to do.');
