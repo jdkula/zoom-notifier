@@ -5,18 +5,33 @@ import { collections } from '~/lib/mongo';
 import { sendEmail } from '../../lib/sendEmail';
 
 import { phoneToEmail } from '~/lib/phone';
+import Axios from 'axios';
 
 enum Event {
     PARTICIPANT_JOINED = 'meeting.participant_joined',
     PARTICIPANT_LEFT = 'meeting.participant_left',
 }
 
-function prepareEmail(match: Match): [string, string, string | undefined] {
-    const { email, message, phone, carrier } = match;
-    const to = email ?? phoneToEmail(phone, carrier);
-    const subject = phone ? undefined : message + ' EOM';
+function prepareEmail(match: Match): [string, string, string | undefined] | null {
+    const { email, message, phone, carrier, url } = match;
+    if (!phone && !email) return null;
 
-    return [to, message, subject];
+    const to = email ?? phoneToEmail(phone, carrier);
+    const subject = phone ? undefined : message;
+
+    return [to, message + ' Join at ' + url, subject];
+}
+
+async function notifyIfttt(match: Match): Promise<void> {
+    const { ifttt, message, url, room } = match;
+
+    if (!ifttt) return;
+
+    await Axios.post(`https://maker.ifttt.com/trigger/zoom_notification/with/key/${ifttt}`, {
+        value1: message,
+        value2: room,
+        value3: url,
+    });
 }
 
 const eventMapping = {
@@ -64,11 +79,16 @@ async function notify(event: Event, meetingId: string, name: string, userId: str
         type = currentParticipants === 0 ? MessageType.END : MessageType.LEAVE;
     }
 
-    const promises = (await prepareMessages(type, settings, name, currentParticipants))
+    const messages = await prepareMessages(type, settings, name, currentParticipants);
+    const emailPromises = messages
         .map((match) => prepareEmail(match))
+        .filter((match) => match !== null)
         .map((args) => sendEmail(...args));
 
-    await Promise.all(promises);
+    const iftttPromises = messages.filter((match) => !!match.ifttt).map((match) => notifyIfttt(match));
+
+    await Promise.all(emailPromises);
+    await Promise.all(iftttPromises);
 }
 
 const Hook: NextApiHandler = async (req, res) => {

@@ -5,7 +5,9 @@ import CarrierMappings from '~/lib/carriers.json';
 const client = new MongoClient(process.env.MONGO_URL, { useNewUrlParser: true, useUnifiedTopology: true });
 
 const mongo = client.connect().then((mongo) => mongo.db('zoomnotifier'));
-mongo.then((db) => db.collection('subscriptions').createIndex({ email: 1, phone: 1, meetingId: 1 }, { unique: true }));
+mongo.then((db) =>
+    db.collection('subscriptions').createIndex({ email: 1, phone: 1, ifttt: 1, meetingId: 1 }, { unique: true }),
+);
 mongo.then((db) => db.collection('settings').createIndex({ meetingId: 1 }, { unique: true }));
 
 export default mongo;
@@ -14,6 +16,7 @@ export interface Subscription extends NotifyPrefs {
     _id?: never;
     email: string | null;
     phone: string | null;
+    ifttt: string | null;
     carrier: keyof typeof CarrierMappings | null;
     meetingId: string;
 }

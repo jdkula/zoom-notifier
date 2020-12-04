@@ -63,6 +63,7 @@ const Sub: NextApiHandler = async (req, res) => {
         phone: req.body.phone,
         carrier: req.body.carrier,
         email: req.body.email,
+        ifttt: req.body.ifttt,
         join: req.body.join,
         leave: req.body.leave,
         end: req.body.end || req.body.leave,

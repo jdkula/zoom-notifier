@@ -11,8 +11,11 @@ export enum MessageType {
 export type Match = {
     email: string | null;
     phone: string | null;
+    ifttt: string | null;
     carrier: keyof typeof CarrierMappings | null;
     message: string;
+    url: string;
+    room: string;
 };
 
 function replaceMatches(s: string, replacements: Record<string, string>): string {
@@ -32,7 +35,7 @@ export async function prepareMessages(
     const messageMatch = setting.seriousMessagesOnly ? { type, serious: true } : { type };
 
     const matches = await db.subscriptions
-        .aggregate<Match>([
+        .aggregate<Omit<Match, 'url' | 'name'>>([
             { $match: { meetingId: setting.meetingId, [type]: true } },
             { $addFields: { messageType: type } },
             {
@@ -47,6 +50,7 @@ export async function prepareMessages(
                     _id: 0,
                     email: 1,
                     phone: 1,
+                    ifttt: 1,
                     carrier: 1,
                     message: {
                         $let: { vars: { message: { $arrayElemAt: ['$messages', 0] } }, in: '$$message.message' },
@@ -75,5 +79,7 @@ export async function prepareMessages(
     return matches.map((match) => ({
         ...match,
         message: replaceMatches(match.message, replacements),
+        url: replacements.url,
+        room: replacements.room,
     }));
 }

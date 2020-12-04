@@ -45,7 +45,7 @@ const MeetingSettingsInner = ({ setting }: { setting: Setting }) => {
 
     const saveSettings = () => {
         setWorking(true);
-        Axios.put(`/api/${setting.meetingId}/settings`, {
+        Axios.put<Setting>(`/api/${setting.meetingId}/settings`, {
             name: meetingName,
             url: meetingUrl,
             seriousMessagesOnly: seriousOnly,

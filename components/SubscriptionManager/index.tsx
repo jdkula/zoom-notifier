@@ -17,6 +17,7 @@ import NotifyPrefs from '~/lib/NotifyPrefs';
 import ContactInformation from './ContactInformation';
 import SubscriptionSettings from './SubscriptionSettings';
 import { phoneToEmail } from '~/lib/phone';
+import { Subscription } from '~/lib/mongo';
 
 const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingId }) => {
     const { enqueueSnackbar } = useSnackbar();
@@ -54,8 +55,9 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
                 email,
                 phone,
                 carrier,
+                ifttt: null,
                 ...notifyPrefs,
-            });
+            } as Subscription);
             enqueueSnackbar('Subscribed!', { variant: 'success' });
             setNewSub(false);
         } catch (e) {
