@@ -30,7 +30,7 @@ async function notifyIfttt(match: Match): Promise<void> {
     if (!ifttt) return;
 
     await Axios.post(`https://maker.ifttt.com/trigger/zoom_notification/with/key/${ifttt}`, {
-        value1: message,
+        value1: message + (url ? ' Click to join!' : ''),
         value2: room,
         ...(url && { value3: url }),
     });
