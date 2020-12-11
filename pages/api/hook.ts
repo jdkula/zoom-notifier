@@ -19,7 +19,7 @@ function prepareEmail(match: Match): [string, string, string | undefined] | null
     const to = email ?? phoneToEmail(phone, carrier);
     const subject = phone ? undefined : message;
 
-    const messageWithJoin = match.url ? message : `${message} Join at: ${url}`;
+    const messageWithJoin = match.url ? `${message} Join at: ${url}` : message;
 
     return [to, messageWithJoin, subject];
 }
