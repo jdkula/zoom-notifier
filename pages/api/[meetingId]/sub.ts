@@ -60,10 +60,10 @@ const Sub: NextApiHandler = async (req, res) => {
 
     const record = {
         meetingId,
-        phone: req.body.phone,
-        carrier: req.body.carrier,
-        email: req.body.email,
-        ifttt: req.body.ifttt,
+        phone: req.body.phone || null,
+        carrier: req.body.carrier || null,
+        email: req.body.email || null,
+        ifttt: req.body.ifttt || null,
         join: req.body.join,
         leave: req.body.leave,
         end: req.body.end || req.body.leave,
