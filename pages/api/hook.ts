@@ -93,13 +93,14 @@ async function notify(event: Event, meetingId: string, name: string, userId: str
     await Promise.all(iftttPromises);
 }
 
-async function logTimestamp(event: Event, eventTs: number, receivedTs: number) {
+async function logTimestamp(event: Event, eventTs: number, receivedTs: number, finishedTs: number) {
     const db = await collections;
 
-    db.log.insertOne({
+    await db.log.insertOne({
         event_type: event,
         event_timestamp: new Date(eventTs * 1000),
         received_timestamp: new Date(receivedTs),
+        finished_timestamp: new Date(finishedTs),
     });
 }
 
@@ -121,11 +122,12 @@ const Hook: NextApiHandler = async (req, res) => {
 
     if (process.env.VERCEL) {
         await notify(req.body.event, id, name, uid);
-        await logTimestamp(req.body.event, req.body.event_ts, receivedTs);
+        await logTimestamp(req.body.event, req.body.event_ts, receivedTs, Date.now());
     } else {
         // run in background, respond immediately
-        notify(req.body.event, id, name, uid);
-        logTimestamp(req.body.event, req.body.event_ts, receivedTs);
+        notify(req.body.event, id, name, uid).then(() =>
+            logTimestamp(req.body.event, req.body.event_ts, receivedTs, Date.now()),
+        );
     }
     res.status(204).end();
 };

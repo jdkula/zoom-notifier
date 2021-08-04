@@ -45,6 +45,7 @@ export interface TimestampLog {
     event_type: string;
     event_timestamp: Date;
     received_timestamp: Date;
+    finished_timestamp: Date;
 }
 
 export const collections = mongo.then((db) => ({
