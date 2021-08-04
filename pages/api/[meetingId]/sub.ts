@@ -2,6 +2,7 @@ import { NextApiHandler } from 'next';
 import { collections, Subscription } from '~/lib/mongo';
 import { phoneToEmail } from '~/lib/phone';
 import { sendEmail } from '~/lib/sendEmail';
+import { sendText } from '~/lib/sendText';
 
 async function delSub({
     phone,
@@ -41,17 +42,25 @@ async function addSub(s: Subscription) {
     const contactEmail = s.email ? s.email : phoneToEmail(s.phone, s.carrier);
 
     if (upsertedCount) {
-        await sendEmail(
-            contactEmail,
-            `Subscribed to zoom notifications for ${name}!`,
-            s.phone ? undefined : 'Zoom Notifier notification',
-        );
+        if (s.email) {
+            await sendEmail(
+                contactEmail,
+                `Subscribed to zoom notifications for ${name}!`,
+                s.phone ? undefined : 'Zoom Notifier notification',
+            );
+        } else {
+            await sendText(s.phone, `Subscribed to zoom notifications for ${name}!`);
+        }
     } else {
-        await sendEmail(
-            contactEmail,
-            `Updated your notification information for ${name}!`,
-            s.phone ? undefined : 'Zoom Notifier notification',
-        );
+        if (s.email) {
+            await sendEmail(
+                contactEmail,
+                `Updated your notification information for ${name}!`,
+                s.phone ? undefined : 'Zoom Notifier notification',
+            );
+        } else {
+            await sendText(s.phone, `Updated your notification information for ${name}!`);
+        }
     }
 }
 

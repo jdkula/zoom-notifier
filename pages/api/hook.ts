@@ -6,6 +6,7 @@ import { sendEmail } from '../../lib/sendEmail';
 
 import { phoneToEmail } from '~/lib/phone';
 import Axios from 'axios';
+import { sendText } from '~/lib/sendText';
 
 enum Event {
     PARTICIPANT_JOINED = 'meeting.participant_joined',
@@ -14,7 +15,7 @@ enum Event {
 
 function prepareEmail(match: Match): [to: string, message: string, subject: string | undefined] | null {
     const { email, message, phone, carrier, url } = match;
-    if (!phone && !email) return null;
+    if (phone || carrier || !email) return null;
 
     const to = email ?? phoneToEmail(phone, carrier);
     const subject = phone ? undefined : message;
@@ -22,6 +23,15 @@ function prepareEmail(match: Match): [to: string, message: string, subject: stri
     const messageWithJoin = match.url ? `${message} Join at: ${url}` : message;
 
     return [to, messageWithJoin, subject];
+}
+
+function prepareText(match: Match): [to: string, message: string] {
+    const { email, message, phone, url } = match;
+    if (!phone || email) return null;
+
+    const messageWithJoin = match.url ? `${message} Join at: ${url}` : message;
+
+    return [phone, messageWithJoin];
 }
 
 async function notifyIfttt(match: Match): Promise<void> {
@@ -89,29 +99,24 @@ async function notify(
         type = currentParticipants === 0 ? MessageType.END : MessageType.LEAVE;
     }
 
-    const summary: Summary = [];
-
     const messages = await prepareMessages(type, settings, name, currentParticipants);
-    const emailPromises = messages
-        .map((match) => {
-            summary.push(match);
+    const textPromises = messages
+        .map(prepareText)
+        .filter((text) => text !== null)
+        .map((args) => sendText(...args));
 
-            return prepareEmail(match);
-        })
+    const emailPromises = messages
+        .map(prepareEmail)
         .filter((email) => email !== null)
         .map((args) => sendEmail(...args));
 
-    const iftttPromises = messages
-        .filter((match) => !!match.ifttt)
-        .map((match) => {
-            summary.push(match);
-            return notifyIfttt(match);
-        });
+    const iftttPromises = messages.filter((match) => !!match.ifttt).map(notifyIfttt);
 
+    await Promise.all(textPromises);
     await Promise.all(emailPromises);
     await Promise.all(iftttPromises);
 
-    return summary;
+    return messages;
 }
 
 async function logTimestamp(
