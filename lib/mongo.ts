@@ -41,9 +41,16 @@ export interface Meeting {
     participants: string[];
 }
 
+export interface TimestampLog {
+    event_type: string;
+    event_timestamp: Date;
+    received_timestamp: Date;
+}
+
 export const collections = mongo.then((db) => ({
     subscriptions: db.collection<Subscription>('subscriptions'),
     settings: db.collection<Setting>('settings'),
     accounts: db.collection<Account>('accounts'),
     meetings: db.collection<Meeting>('meetings'),
+    log: db.collection<TimestampLog>('timestamp_log'),
 }));

@@ -93,7 +93,18 @@ async function notify(event: Event, meetingId: string, name: string, userId: str
     await Promise.all(iftttPromises);
 }
 
+async function logTimestamp(event: Event, eventTs: number, receivedTs: number) {
+    const db = await collections;
+
+    db.log.insertOne({
+        event_type: event,
+        event_timestamp: new Date(eventTs * 1000),
+        received_timestamp: new Date(receivedTs),
+    });
+}
+
 const Hook: NextApiHandler = async (req, res) => {
+    const receivedTs = Date.now();
     if (req.headers['authorization'] !== process.env.VERIFICATION_TOKEN) {
         res.status(401).send('Not Authorized');
         return;
@@ -108,8 +119,15 @@ const Hook: NextApiHandler = async (req, res) => {
         return;
     }
 
-    await notify(req.body.event, id, name, uid);
-    res.status(200).end('OK');
+    if (process.env.VERCEL) {
+        await notify(req.body.event, id, name, uid);
+        await logTimestamp(req.body.event, req.body.event_ts, receivedTs);
+    } else {
+        // run in background, respond immediately
+        notify(req.body.event, id, name, uid);
+        logTimestamp(req.body.event, req.body.event_ts, receivedTs);
+    }
+    res.status(204).end();
 };
 
 export default Hook;
