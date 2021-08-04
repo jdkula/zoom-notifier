@@ -29,6 +29,7 @@ export interface Setting {
     meetingId: string;
     seriousMessagesOnly: boolean;
     shorten: boolean;
+    lastEventTime: number;
 }
 
 export interface Account {

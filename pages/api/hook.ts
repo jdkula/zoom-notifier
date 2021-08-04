@@ -65,14 +65,22 @@ async function updateMeeting(event: Event, meetingId: string, userId: string): P
     return participants.length + deltas[event];
 }
 
-async function notify(event: Event, meetingId: string, name: string, userId: string): Promise<Summary> {
+async function notify(
+    event: Event,
+    meetingId: string,
+    name: string,
+    userId: string,
+    eventTs: number,
+): Promise<Summary> {
     const db = await collections;
 
     const currentParticipants = await updateMeeting(event, meetingId, userId);
     if (currentParticipants === null) return;
 
     const settings = await db.settings.findOne({ meetingId });
-    if (!settings) return;
+    if (!settings) return [];
+    if (settings.lastEventTime >= eventTs) return []; // ensure no duplicate or out of order vents
+    await db.settings.updateOne({ meetingId, lastEventTime: { $lt: eventTs } }, { $set: { lastEventTime: eventTs } });
 
     let type: MessageType;
     if (event === Event.PARTICIPANT_JOINED) {
@@ -138,19 +146,20 @@ const Hook: NextApiHandler = async (req, res) => {
     const id = req.body?.payload?.object?.id;
     const name = req.body?.payload?.object?.participant?.user_name;
     const uid = req.body?.payload?.object?.participant?.user_id;
+    const eventTs = req.body?.event_ts;
 
-    if (!id || !name || !uid) {
+    if (!id || !name || !uid || !eventTs) {
         res.status(400).send('Invalid Meeting ID');
         return;
     }
 
     let respondedTs: number | null = null;
     if (process.env.VERCEL) {
-        const summary = await notify(req.body.event, id, name, uid);
+        const summary = await notify(req.body.event, id, name, uid, eventTs);
         await logTimestamp(req.body.event, req.body.event_ts, receivedTs, respondedTs, Date.now(), summary, id);
     } else {
         // run in background, respond immediately
-        notify(req.body.event, id, name, uid).then((summary) =>
+        notify(req.body.event, id, name, uid, eventTs).then((summary) =>
             logTimestamp(req.body.event, req.body.event_ts, receivedTs, respondedTs, Date.now(), summary, id),
         );
     }
