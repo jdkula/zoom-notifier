@@ -1,6 +1,6 @@
 import { NextApiHandler } from 'next';
 import { Match, MessageType, prepareMessages } from '~/lib/messages';
-import { collections } from '~/lib/mongo';
+import { collections, Summary } from '~/lib/mongo';
 
 import { sendEmail } from '../../lib/sendEmail';
 
@@ -12,7 +12,7 @@ enum Event {
     PARTICIPANT_LEFT = 'meeting.participant_left',
 }
 
-function prepareEmail(match: Match): [string, string, string | undefined] | null {
+function prepareEmail(match: Match): [to: string, message: string, subject: string | undefined] | null {
     const { email, message, phone, carrier, url } = match;
     if (!phone && !email) return null;
 
@@ -65,7 +65,7 @@ async function updateMeeting(event: Event, meetingId: string, userId: string): P
     return participants.length + deltas[event];
 }
 
-async function notify(event: Event, meetingId: string, name: string, userId: string): Promise<void> {
+async function notify(event: Event, meetingId: string, name: string, userId: string): Promise<Summary> {
     const db = await collections;
 
     const currentParticipants = await updateMeeting(event, meetingId, userId);
@@ -81,26 +81,50 @@ async function notify(event: Event, meetingId: string, name: string, userId: str
         type = currentParticipants === 0 ? MessageType.END : MessageType.LEAVE;
     }
 
+    const summary: Summary = [];
+
     const messages = await prepareMessages(type, settings, name, currentParticipants);
     const emailPromises = messages
-        .map((match) => prepareEmail(match))
-        .filter((match) => match !== null)
+        .map((match) => {
+            summary.push(match);
+
+            return prepareEmail(match);
+        })
+        .filter((email) => email !== null)
         .map((args) => sendEmail(...args));
 
-    const iftttPromises = messages.filter((match) => !!match.ifttt).map((match) => notifyIfttt(match));
+    const iftttPromises = messages
+        .filter((match) => !!match.ifttt)
+        .map((match) => {
+            summary.push(match);
+            return notifyIfttt(match);
+        });
 
     await Promise.all(emailPromises);
     await Promise.all(iftttPromises);
+
+    return summary;
 }
 
-async function logTimestamp(event: Event, eventTs: number, receivedTs: number, finishedTs: number) {
+async function logTimestamp(
+    event: Event,
+    eventTs: number,
+    receivedTs: number,
+    respondedTs: number | null,
+    finishedTs: number,
+    summary: Summary,
+    meetingId: string,
+) {
     const db = await collections;
 
-    await db.log.insertOne({
+    await db.auditLog.insertOne({
         event_type: event,
-        event_timestamp: new Date(eventTs * 1000),
+        event_timestamp: new Date(eventTs),
         received_timestamp: new Date(receivedTs),
+        responded_timestamp: respondedTs ? new Date(respondedTs) : null,
         finished_timestamp: new Date(finishedTs),
+        meeting_id: meetingId,
+        summary,
     });
 }
 
@@ -120,16 +144,18 @@ const Hook: NextApiHandler = async (req, res) => {
         return;
     }
 
+    let respondedTs: number | null = null;
     if (process.env.VERCEL) {
-        await notify(req.body.event, id, name, uid);
-        await logTimestamp(req.body.event, req.body.event_ts, receivedTs, Date.now());
+        const summary = await notify(req.body.event, id, name, uid);
+        await logTimestamp(req.body.event, req.body.event_ts, receivedTs, respondedTs, Date.now(), summary, id);
     } else {
         // run in background, respond immediately
-        notify(req.body.event, id, name, uid).then(() =>
-            logTimestamp(req.body.event, req.body.event_ts, receivedTs, Date.now()),
+        notify(req.body.event, id, name, uid).then((summary) =>
+            logTimestamp(req.body.event, req.body.event_ts, receivedTs, respondedTs, Date.now(), summary, id),
         );
     }
     res.status(204).end();
+    respondedTs = Date.now();
 };
 
 export default Hook;

@@ -1,6 +1,7 @@
 import { MongoClient } from 'mongodb';
 import NotifyPrefs from './NotifyPrefs';
 import CarrierMappings from '~/lib/carriers.json';
+import { Match } from './messages';
 
 const client = new MongoClient(process.env.MONGO_URL, { useNewUrlParser: true, useUnifiedTopology: true });
 
@@ -41,11 +42,15 @@ export interface Meeting {
     participants: string[];
 }
 
-export interface TimestampLog {
+export type Summary = Array<Match>;
+export interface AuditLog {
     event_type: string;
     event_timestamp: Date;
     received_timestamp: Date;
+    responded_timestamp: Date | null;
     finished_timestamp: Date;
+    summary: Summary;
+    meeting_id: string;
 }
 
 export const collections = mongo.then((db) => ({
@@ -53,5 +58,5 @@ export const collections = mongo.then((db) => ({
     settings: db.collection<Setting>('settings'),
     accounts: db.collection<Account>('accounts'),
     meetings: db.collection<Meeting>('meetings'),
-    log: db.collection<TimestampLog>('timestamp_log'),
+    auditLog: db.collection<AuditLog>('audit_log'),
 }));
