@@ -46,6 +46,7 @@ const Settings: NextApiHandler = async (req, res) => {
             url: req.body.url,
             seriousMessagesOnly: req.body.seriousMessagesOnly,
             shorten: req.body.shorten,
+            lastEventTime: 0,
         };
         await db.settings.updateOne({ meetingId }, { $set: record }, { upsert: true });
         res.send(record);
