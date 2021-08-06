@@ -1,6 +1,6 @@
 import { NextApiHandler } from 'next';
 import { Match, MessageType, prepareMessages } from '~/lib/messages';
-import { collections, Summary } from '~/lib/mongo';
+import { AuditLog, collections, Summary } from '~/lib/mongo';
 
 import { sendEmail } from '../../lib/sendEmail';
 
@@ -81,16 +81,12 @@ async function notify(
     name: string,
     userId: string,
     eventTs: number,
-): Promise<Summary> {
+): Promise<Pick<AuditLog, 'summary' | 'message_type' | 'action'>> {
     const db = await collections;
 
     const currentParticipants = await updateMeeting(event, meetingId, userId);
-    if (currentParticipants === null) return;
-
-    const settings = await db.settings.findOne({ meetingId });
-    if (!settings) return [];
-    if (settings.lastEventTime >= eventTs) return []; // ensure no duplicate or out of order vents
-    await db.settings.updateOne({ meetingId, lastEventTime: { $lt: eventTs } }, { $set: { lastEventTime: eventTs } });
+    if (currentParticipants === null)
+        return { summary: [], message_type: 'unknown', action: 'error_action_already_applied' };
 
     let type: MessageType;
     if (event === Event.PARTICIPANT_JOINED) {
@@ -98,6 +94,11 @@ async function notify(
     } else {
         type = currentParticipants === 0 ? MessageType.END : MessageType.LEAVE;
     }
+
+    const settings = await db.settings.findOne({ meetingId });
+    if (!settings) return { summary: [], message_type: type, action: 'error_no_settings' };
+    if (settings.lastEventTime >= eventTs) return { summary: [], message_type: type, action: 'error_late_event' }; // ensure no duplicate or out of order vents
+    await db.settings.updateOne({ meetingId, lastEventTime: { $lt: eventTs } }, { $set: { lastEventTime: eventTs } });
 
     const messages = await prepareMessages(type, settings, name, currentParticipants);
     const textPromises = messages
@@ -116,29 +117,13 @@ async function notify(
     await Promise.all(emailPromises);
     await Promise.all(iftttPromises);
 
-    return messages;
+    return { summary: messages, message_type: type, action: 'messages_sent' };
 }
 
-async function logTimestamp(
-    event: Event,
-    eventTs: number,
-    receivedTs: number,
-    respondedTs: number | null,
-    finishedTs: number,
-    summary: Summary,
-    meetingId: string,
-) {
+async function log(auditLog: AuditLog) {
     const db = await collections;
 
-    await db.auditLog.insertOne({
-        event_type: event,
-        event_timestamp: new Date(eventTs),
-        received_timestamp: new Date(receivedTs),
-        responded_timestamp: respondedTs ? new Date(respondedTs) : null,
-        finished_timestamp: new Date(finishedTs),
-        meeting_id: meetingId,
-        summary,
-    });
+    await db.auditLog.insertOne(auditLog);
 }
 
 const Hook: NextApiHandler = async (req, res) => {
@@ -160,12 +145,28 @@ const Hook: NextApiHandler = async (req, res) => {
 
     let respondedTs: number | null = null;
     if (process.env.VERCEL) {
-        const summary = await notify(req.body.event, id, name, uid, eventTs);
-        await logTimestamp(req.body.event, req.body.event_ts, receivedTs, respondedTs, Date.now(), summary, id);
+        const res = await notify(req.body.event, id, name, uid, eventTs);
+        await log({
+            event_type: req.body.event,
+            event_timestamp: new Date(req.body.event_ts),
+            received_timestamp: new Date(receivedTs),
+            responded_timestamp: new Date(respondedTs),
+            finished_timestamp: new Date(),
+            meeting_id: id,
+            ...res,
+        });
     } else {
         // run in background, respond immediately
-        notify(req.body.event, id, name, uid, eventTs).then((summary) =>
-            logTimestamp(req.body.event, req.body.event_ts, receivedTs, respondedTs, Date.now(), summary, id),
+        notify(req.body.event, id, name, uid, eventTs).then((res) =>
+            log({
+                event_type: req.body.event,
+                event_timestamp: new Date(req.body.event_ts),
+                received_timestamp: new Date(receivedTs),
+                responded_timestamp: new Date(respondedTs),
+                finished_timestamp: new Date(),
+                meeting_id: id,
+                ...res,
+            }),
         );
     }
     res.status(204).end();

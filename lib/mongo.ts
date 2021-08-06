@@ -1,7 +1,7 @@
 import { MongoClient } from 'mongodb';
 import NotifyPrefs from './NotifyPrefs';
 import CarrierMappings from '~/lib/carriers.json';
-import { Match } from './messages';
+import { Match, MessageType } from './messages';
 
 const client = new MongoClient(process.env.MONGO_URL, { useNewUrlParser: true, useUnifiedTopology: true });
 
@@ -46,6 +46,8 @@ export interface Meeting {
 export type Summary = Array<Match>;
 export interface AuditLog {
     event_type: string;
+    message_type: string;
+    action: string;
     event_timestamp: Date;
     received_timestamp: Date;
     responded_timestamp: Date | null;
