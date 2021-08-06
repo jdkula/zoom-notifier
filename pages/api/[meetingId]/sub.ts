@@ -9,10 +9,24 @@ async function delSub({
     email,
     carrier,
     meetingId,
-}: Pick<Subscription, 'phone' | 'email' | 'carrier' | 'meetingId'>) {
+}: Pick<Subscription, 'phone' | 'email' | 'carrier' | 'meetingId'>): Promise<boolean> {
     const db = await collections;
 
-    return (await db.subscriptions.deleteOne({ phone, email, carrier, meetingId })).deletedCount > 0;
+    const deleted = (await db.subscriptions.deleteOne({ phone, email, carrier, meetingId })).deletedCount > 0;
+
+    const settings = await db.settings.findOne({ meetingId });
+
+    const name = settings?.name || meetingId;
+
+    if (deleted) {
+        if (email) {
+            await sendEmail(email, `Unsubscribed to zoom notifications for ${name}`, 'Zoom Notifier notification');
+        } else {
+            await sendText(phone, `Unsubscribed to zoom notifications for ${name}`);
+        }
+    }
+
+    return deleted;
 }
 
 async function getSub({
@@ -30,7 +44,7 @@ async function addSub(s: Subscription) {
     const db = await collections;
 
     const { upsertedCount } = await db.subscriptions.updateOne(
-        { email: s.email, meetingId: s.meetingId },
+        { email: s.email, phone: s.phone, meetingId: s.meetingId },
         { $set: s },
         { upsert: true },
     );
