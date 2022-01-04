@@ -5,11 +5,15 @@ COPY package.json yarn.lock ./
 RUN apk add --update --no-cache python3 libc6-compat && ln -sf python3 /usr/bin/python
 RUN yarn install --frozen-lockfile --network-timeout 1000000
 
-FROM --platform=$BUILDPLATFORM node:17-alpine AS builder
+FROM --platform=$BUILDPLATFORM node:16-alpine AS builder
 WORKDIR /zoom-notifier
-COPY . ./
 COPY --from=deps-builder /zoom-notifier/package.json ./package.json
 COPY --from=deps-builder /zoom-notifier/node_modules ./node_modules
+COPY . ./
+# Next.js collects completely anonymous telemetry data about general usage.
+# Learn more here: https://nextjs.org/telemetry
+# Uncomment the following line in case you want to disable telemetry.
+ENV NEXT_TELEMETRY_DISABLED 1
 RUN yarn build
 
 

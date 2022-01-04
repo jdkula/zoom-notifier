@@ -130,6 +130,8 @@ export default function MeetingSettings(props: { setting: Setting; access: boole
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
+    console.log(context.req.headers);
+
     const meetingId = context.params?.meetingId as string;
 
     const session = await getSession(context);

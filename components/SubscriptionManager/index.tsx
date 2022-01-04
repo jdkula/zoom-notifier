@@ -18,27 +18,38 @@ import ContactInformation from './ContactInformation';
 import SubscriptionSettings from './SubscriptionSettings';
 import { phoneToEmail } from '~/lib/phone';
 import { Subscription } from '~/lib/mongo';
+import { PhoneNumberUtil } from 'google-libphonenumber';
+// Grabbed from https://support.myovision.com/help/ttm-carriers, converted with https://www.convertjson.com/html-table-to-json.htm
+import CarrierMappings from '~/lib/carriers.json';
+
+const phoneUtil = PhoneNumberUtil.getInstance();
+
+const carrierOptions = Object.keys(CarrierMappings);
 
 const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingId }) => {
     const { enqueueSnackbar } = useSnackbar();
     const [email, setEmail] = useState<string | null>(null);
     const [phone, setPhone] = useState<string | null>(null);
     const [carrier, setCarrier] = useState<string | null>(null);
+    const [ifttt, setIfttt] = useState<string | null>(null);
+    const [selection, setSelection] = useState<'phone' | 'email' | 'ifttt' | null>(null);
 
     const [contactOpen, setContactOpen] = useState(false);
     const [contactEntered, setContactEntered] = useState(false);
-    const hasContactInformation = !!email || (!!phone && !!carrier);
+    const hasContactInformation = !!email || (!!phone && !!carrier) || !!ifttt;
 
     const [newSub, setNewSub] = useState(true);
     const [notifyPrefs, setNotifyPrefs] = useState<NotifyPrefs | null>(null);
     const [working, setWorking] = useState(false);
 
-    const preloadContactInfo = (email: string | null, phone: string | null, carrier: string | null) => {
-        setEmail(email);
-        setPhone(phone);
-        setCarrier(carrier);
-        if (email || (phone && carrier)) {
-            getSubInfo(email, phone, carrier);
+    const preloadContactInfo = (
+        email: string | null,
+        phone: string | null,
+        carrier: string | null,
+        ifttt: string | null,
+    ) => {
+        if (email || (phone && carrier) || ifttt) {
+            getSubInfo(email, phone, carrier, ifttt);
         }
     };
 
@@ -48,6 +59,61 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
         setNotifyPrefs(null);
     }, [email, phone, carrier]);
 
+    useEffect(() => {
+        const phone = window.localStorage.getItem('__ZN_phone');
+        const carrier = window.localStorage.getItem('__ZN_carrier');
+        const email = window.localStorage.getItem('__ZN_email');
+        const ifttt = window.localStorage.getItem('__ZN_ifttt');
+        const selection = window.localStorage.getItem('__ZN_selection');
+        setPhone(phone ?? '');
+        if (carrierOptions.includes(carrier)) {
+            setCarrier(carrier);
+        }
+        setEmail(email ?? '');
+
+        if (selection) {
+            setSelection(selection as 'phone' | 'email' | 'ifttt');
+        }
+
+        if (selection === 'phone') {
+            try {
+                if (
+                    carrierOptions.includes(carrier) &&
+                    phone.length === 10 &&
+                    phoneUtil.isValidNumberForRegion(phoneUtil.parse(phone, 'US'), 'US')
+                ) {
+                    setPhone(phone);
+                    setCarrier(carrier);
+                    setEmail(email);
+                    setIfttt(ifttt);
+                    preloadContactInfo(email, phone, carrier, ifttt);
+                }
+            } catch (e) {
+                // do nothing
+            }
+        } else if (selection === 'email') {
+            setPhone(null);
+            setCarrier(null);
+            setEmail(email);
+            setIfttt(null);
+            preloadContactInfo(email, phone, carrier, ifttt);
+        } else if (selection === 'ifttt') {
+            setPhone(null);
+            setCarrier(null);
+            setEmail(null);
+            setIfttt(ifttt);
+            preloadContactInfo(email, phone, carrier, ifttt);
+        }
+    }, []);
+
+    useEffect(() => {
+        window.localStorage.setItem('__ZN_phone', phone);
+        window.localStorage.setItem('__ZN_carrier', carrier);
+        window.localStorage.setItem('__ZN_email', email);
+        window.localStorage.setItem('__ZN_ifttt', ifttt);
+        window.localStorage.setItem('__ZN_selection', selection);
+    }, [phone, email, carrier, ifttt, selection]);
+
     const subscribe = async () => {
         setWorking(true);
         try {
@@ -55,7 +121,7 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
                 email,
                 phone,
                 carrier,
-                ifttt: null,
+                ifttt,
                 ...notifyPrefs,
             } as Subscription);
             enqueueSnackbar('Subscribed!', { variant: 'success' });
@@ -70,7 +136,7 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
     const unsubscribe = async () => {
         setWorking(true);
         try {
-            await Axios.delete(`/api/${meetingId}/sub`, { data: { email, phone, carrier } });
+            await Axios.delete(`/api/${meetingId}/sub`, { data: { email, phone, carrier, ifttt } });
             enqueueSnackbar('Unsubscribed!', { variant: 'success' });
             setNewSub(true);
             setContactEntered(false);
@@ -83,10 +149,10 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
         }
     };
 
-    const getSubInfo = async (email, phone, carrier) => {
+    const getSubInfo = async (email, phone, carrier, ifttt, cont = true) => {
         setWorking(true);
         try {
-            const { data } = await Axios.get(`/api/${meetingId}/sub`, { params: { email, phone, carrier } });
+            const { data } = await Axios.get(`/api/${meetingId}/sub`, { params: { email, phone, carrier, ifttt } });
 
             setNotifyPrefs(data);
             setNewSub(false);
@@ -99,9 +165,11 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
             });
             setNewSub(true);
         } finally {
-            setContactEntered(true);
-            setContactOpen(false);
-            setWorking(false);
+            if (cont) {
+                setContactEntered(true);
+                setContactOpen(false);
+                setWorking(false);
+            }
         }
     };
 
@@ -110,6 +178,8 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
         subtitle = phoneToEmail(phone, carrier);
     } else if (contactEntered && email) {
         subtitle = email;
+    } else if (contactEntered && ifttt) {
+        subtitle = 'IFTTT Key: ' + ifttt;
     } else {
         subtitle = 'Enter your contact information below.';
     }
@@ -133,7 +203,20 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
                         </Box>
                     </AccordionSummary>
                     <AccordionDetails>
-                        <ContactInformation {...{ setEmail, setPhone, setCarrier }} preload={preloadContactInfo} />
+                        <ContactInformation
+                            {...{
+                                setEmail,
+                                setPhone,
+                                setCarrier,
+                                setIfttt,
+                                setSelection,
+                                selection,
+                                carrier,
+                                email,
+                                ifttt,
+                                phone,
+                            }}
+                        />
                     </AccordionDetails>
                 </Accordion>
                 <Accordion
@@ -177,7 +260,7 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
                         variant="contained"
                         color="primary"
                         disabled={!hasContactInformation}
-                        onClick={() => getSubInfo(email, phone, carrier)}
+                        onClick={() => getSubInfo(email, phone, carrier, ifttt)}
                         fullWidth
                     >
                         Continue

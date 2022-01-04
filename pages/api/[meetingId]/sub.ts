@@ -32,12 +32,16 @@ async function delSub({
 async function getSub({
     phone,
     email,
-    carrier,
     meetingId,
-}: Pick<Subscription, 'phone' | 'email' | 'carrier' | 'meetingId'>) {
+    ifttt,
+}: Pick<Subscription, 'phone' | 'email' | 'carrier' | 'meetingId' | 'ifttt'>) {
     const db = await collections;
 
-    return await db.subscriptions.findOne({ phone, email, carrier, meetingId }, { projection: { _id: 0 } });
+    if (phone === 'null') phone = null;
+    if (email === 'null') email = null;
+    if (ifttt === 'null') ifttt = null;
+
+    return await db.subscriptions.findOne({ phone, email, meetingId, ifttt }, { projection: { _id: 0 } });
 }
 
 async function addSub(s: Subscription) {
@@ -102,6 +106,7 @@ const Sub: NextApiHandler = async (req, res) => {
             phone: (req.query.phone as string | undefined) || null,
             carrier: (req.query.carrier as Subscription['carrier'] | undefined) || null,
             email: (req.query.email as string | undefined) || null,
+            ifttt: (req.query.ifttt as string | undefined) || null,
         });
         if (!sub) {
             res.status(404).send('Not found.');

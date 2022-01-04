@@ -3,7 +3,7 @@ import NotifyPrefs from './NotifyPrefs';
 import CarrierMappings from '~/lib/carriers.json';
 import { Match } from './messages';
 
-const client = new MongoClient(process.env.MONGO_URL ?? '');
+const client = new MongoClient(process.env.MONGO_URL ?? 'mongodb://localhost');
 
 const mongo = client.connect().then((mongo) => mongo.db('zoomnotifier'));
 mongo.then((db) =>

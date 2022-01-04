@@ -1,8 +1,7 @@
-import { CardContent, Box, TextField, FormControl } from '@mui/material';
+import { CardContent, Box, TextField, FormControl, RadioGroup, FormControlLabel, Radio } from '@mui/material';
 import React, { FC, SyntheticEvent, useEffect, useState } from 'react';
 import { PhoneNumberUtil } from 'google-libphonenumber';
 import styled from '@emotion/styled';
-import DividerWithText from '../DividerWithText';
 
 // Grabbed from https://support.myovision.com/help/ttm-carriers, converted with https://www.convertjson.com/html-table-to-json.htm
 import CarrierMappings from '~/lib/carriers.json';
@@ -23,22 +22,30 @@ const isEmailValid = (email: string) =>
     );
 
 interface ContactInformationProps {
-    preload: (email: string | null, phone: string | null, carrier: string | null) => void;
     setPhone: (phone: string | null) => void;
     setEmail: (email: string | null) => void;
     setCarrier: (carrier: string | null) => void;
+    setIfttt: (ifttt: string | null) => void;
+    setSelection: (selection: 'phone' | 'email' | 'ifttt' | null) => void;
+    phone: string | null;
+    email: string | null;
+    carrier: string | null;
+    ifttt: string | null;
+    selection: 'phone' | 'email' | 'ifttt' | null;
 }
 
 const ContactInformation: FC<ContactInformationProps> = ({
-    setEmail: updateEmail,
-    setPhone: updatePhone,
-    setCarrier: updateCarrier,
-    preload,
+    phone,
+    email,
+    carrier,
+    ifttt,
+    selection,
+    setPhone,
+    setEmail,
+    setCarrier,
+    setIfttt,
+    setSelection,
 }) => {
-    const [email, setEmail] = useState('');
-    const [phone, setPhone] = useState('');
-    const [carrier, setCarrier] = useState<null | string>(null);
-
     const [phoneValid, setPhoneValid] = useState(false);
 
     const emailValid = isEmailValid(email);
@@ -55,49 +62,8 @@ const ContactInformation: FC<ContactInformationProps> = ({
         }
     }, [phone]);
 
-    useEffect(() => {
-        const phone = window.localStorage.getItem('__ZN_phone');
-        const carrier = window.localStorage.getItem('__ZN_carrier');
-        const email = window.localStorage.getItem('__ZN_email');
-        setPhone(phone ?? '');
-        if (carrierOptions.includes(carrier)) {
-            setCarrier(carrier);
-        }
-        setEmail(email ?? '');
-
-        if (phone || carrier) {
-            try {
-                if (
-                    carrierOptions.includes(carrier) &&
-                    phone.length === 10 &&
-                    phoneUtil.isValidNumberForRegion(phoneUtil.parse(phone, 'US'), 'US')
-                ) {
-                    console.log('Preloading...?');
-                    window.setTimeout(() => preload(email, phone, carrier), 1);
-                }
-            } catch (e) {
-                // do nothing
-            }
-        } else if (email) {
-            window.setTimeout(() => preload(email, phone, carrier), 1);
-        }
-    }, []);
-
-    const updateProxy = (forceContinue: boolean) => {
-        const isPhone = !!phone && !!carrier;
-        const isValid = (isPhone && phoneValid && !!carrier) || (!!email && !isPhone && emailValid);
-        console.log('updateProxy called with', { email, phone, carrier, isPhone, isValid, emailValid, phoneValid });
-        updateEmail(isValid ? email || null : null);
-        updatePhone(isValid ? phone || null : null);
-        updateCarrier(carrier);
-        if (forceContinue) {
-            preload(isValid ? email : null, isValid ? phone : null, carrier);
-        }
-    };
-
     const onSubmit = (e: SyntheticEvent<never>) => {
         e.preventDefault();
-        updateProxy(true);
     };
 
     useEffect(() => {
@@ -112,62 +78,110 @@ const ContactInformation: FC<ContactInformationProps> = ({
         }
     }, [phone, carrier]);
 
-    useEffect(() => {
-        updateProxy(false);
-    }, [email, phoneValid, emailValid, phone, carrier]);
-
-    useEffect(() => {
-        window.localStorage.setItem('__ZN_phone', phone);
-        window.localStorage.setItem('__ZN_carrier', carrier);
-        window.localStorage.setItem('__ZN_email', email);
-    }, [phone, email, carrier]);
-
     return (
         <CardContent>
             <form onSubmit={onSubmit}>
                 <input type="submit" style={{ display: 'none' }} />
-                <Box pt={1} display="flex" justifyContent="center">
+                <Box
+                    display="flex"
+                    flexDirection="column"
+                    justifyContent="center"
+                    alignItems="center"
+                    textAlign="center"
+                >
+                    <FormControl component="fieldset">
+                        <RadioGroup
+                            row
+                            aria-label="color"
+                            name="row-radio-buttons-group"
+                            value={selection}
+                            onChange={(_, selection) => {
+                                setSelection(selection as 'phone' | 'email' | 'ifttt');
+                                setCarrier(null);
+                                setPhone(null);
+                                setEmail(null);
+                                setIfttt(null);
+                            }}
+                        >
+                            <FormControlLabel value="phone" control={<Radio />} label="Phone" labelPlacement="top" />
+                            <FormControlLabel value="email" control={<Radio />} label="Email" labelPlacement="top" />
+                            <FormControlLabel value="ifttt" control={<Radio />} label="IFTTT" labelPlacement="top" />
+                        </RadioGroup>
+                    </FormControl>
+                </Box>
+                {selection === 'phone' && (
+                    <Box pt={1} display="flex" justifyContent="center">
+                        <TextField
+                            variant="outlined"
+                            label="Phone"
+                            value={phone ?? ''}
+                            error={!phoneValid}
+                            inputProps={{ 'aria-label': '10-digit US phone number' }}
+                            InputLabelProps={{ 'aria-hidden': true }}
+                            FormHelperTextProps={{ 'aria-hidden': true }}
+                            helperText={'10-digit US phone number'}
+                            onChange={(e) => {
+                                setPhone(e.target.value);
+                                setEmail(null);
+                                setIfttt(null);
+                            }}
+                        />
+                        <span style={{ padding: '0.25rem' }} />
+                        <CarrierSelect>
+                            <Autocomplete
+                                id="carrier-select"
+                                autoComplete
+                                autoHighlight
+                                autoSelect
+                                options={carrierOptions}
+                                value={carrier}
+                                onChange={(_, value) => {
+                                    setCarrier(value);
+                                    setEmail(null);
+                                    setIfttt(null);
+                                }}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        error={phoneValid && phone !== '' && !carrier}
+                                        label="Select Carrier"
+                                        variant="outlined"
+                                    />
+                                )}
+                            />
+                        </CarrierSelect>
+                    </Box>
+                )}
+                {selection === 'email' && (
                     <TextField
                         variant="outlined"
-                        label="Phone"
-                        value={phone}
-                        error={!phoneValid}
-                        inputProps={{ 'aria-label': '10-digit US phone number' }}
-                        InputLabelProps={{ 'aria-hidden': true }}
-                        FormHelperTextProps={{ 'aria-hidden': true }}
-                        helperText={'10-digit US phone number'}
-                        onChange={(e) => setPhone(e.target.value)}
+                        label="Email"
+                        value={email ?? ''}
+                        error={!emailValid}
+                        fullWidth
+                        onChange={(e) => {
+                            setEmail(e.target.value);
+                            setIfttt(null);
+                            setCarrier(null);
+                            setPhone(null);
+                        }}
                     />
-                    <span style={{ padding: '0.25rem' }} />
-                    <CarrierSelect>
-                        <Autocomplete
-                            id="carrier-select"
-                            autoComplete
-                            autoHighlight
-                            autoSelect
-                            options={carrierOptions}
-                            value={carrier}
-                            onChange={(_, value) => setCarrier(value)}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    error={phoneValid && phone !== '' && !carrier}
-                                    label="Select Carrier"
-                                    variant="outlined"
-                                />
-                            )}
-                        />
-                    </CarrierSelect>
-                </Box>
-                <DividerWithText>Or</DividerWithText>
-                <TextField
-                    variant="outlined"
-                    label="Email"
-                    value={email}
-                    error={!emailValid && (!phoneValid || !carrier)}
-                    fullWidth
-                    onChange={(e) => setEmail(e.target.value)}
-                />
+                )}
+                {selection === 'ifttt' && (
+                    <TextField
+                        variant="outlined"
+                        label="IFTTT Key"
+                        value={ifttt ?? ''}
+                        error={!ifttt}
+                        fullWidth
+                        onChange={(e) => {
+                            setIfttt(e.target.value);
+                            setEmail(null);
+                            setCarrier(null);
+                            setPhone(null);
+                        }}
+                    />
+                )}
             </form>
         </CardContent>
     );

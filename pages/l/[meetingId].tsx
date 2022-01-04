@@ -30,6 +30,8 @@ export default function MeetingLink({ redirect, name }: { redirect: string | nul
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
+    console.log(context.req.headers);
+
     const meetingId = context.params?.meetingId as string;
 
     const settings = await getSettings(meetingId);
