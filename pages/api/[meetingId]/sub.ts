@@ -1,4 +1,5 @@
 import { NextApiHandler } from 'next';
+import sendIfttt from '~/lib/ifttt';
 import { collections, Subscription } from '~/lib/mongo';
 import { phoneToEmail } from '~/lib/phone';
 import { sendEmail } from '~/lib/sendEmail';
@@ -9,7 +10,8 @@ async function delSub({
     email,
     carrier,
     meetingId,
-}: Pick<Subscription, 'phone' | 'email' | 'carrier' | 'meetingId'>): Promise<boolean> {
+    ifttt,
+}: Pick<Subscription, 'phone' | 'email' | 'carrier' | 'meetingId' | 'ifttt'>): Promise<boolean> {
     const db = await collections;
 
     const deleted = (await db.subscriptions.deleteOne({ phone, email, carrier, meetingId })).deletedCount > 0;
@@ -20,9 +22,11 @@ async function delSub({
 
     if (deleted) {
         if (email) {
-            await sendEmail(email, `Unsubscribed to zoom notifications for ${name}`, 'Zoom Notifier notification');
+            await sendEmail(email, `Unsubscribed from zoom notifications for ${name}`, 'Zoom Notifier notification');
+        } else if (ifttt) {
+            await sendIfttt(ifttt, 'Zoom Notifier notification', `Unsubscribed from zoom notifications for ${name}`);
         } else {
-            await sendText(phone, `Unsubscribed to zoom notifications for ${name}`);
+            await sendText(phone, `Unsubscribed from zoom notifications for ${name}`);
         }
     }
 
@@ -37,10 +41,6 @@ async function getSub({
 }: Pick<Subscription, 'phone' | 'email' | 'carrier' | 'meetingId' | 'ifttt'>) {
     const db = await collections;
 
-    if (phone === 'null') phone = null;
-    if (email === 'null') email = null;
-    if (ifttt === 'null') ifttt = null;
-
     return await db.subscriptions.findOne({ phone, email, meetingId, ifttt }, { projection: { _id: 0 } });
 }
 
@@ -48,7 +48,7 @@ async function addSub(s: Subscription) {
     const db = await collections;
 
     const { upsertedCount } = await db.subscriptions.updateOne(
-        { email: s.email, phone: s.phone, meetingId: s.meetingId },
+        { email: s.email, phone: s.phone, ifttt: s.ifttt, meetingId: s.meetingId },
         { $set: s },
         { upsert: true },
     );
@@ -66,6 +66,8 @@ async function addSub(s: Subscription) {
                 `Subscribed to zoom notifications for ${name}!`,
                 s.phone ? undefined : 'Zoom Notifier notification',
             );
+        } else if (s.ifttt) {
+            sendIfttt(s.ifttt, 'Subscription confirmation', `Subscribed to zoom notifications for ${name}!`);
         } else {
             await sendText(s.phone, `Subscribed to zoom notifications for ${name}!`);
         }
@@ -76,6 +78,8 @@ async function addSub(s: Subscription) {
                 `Updated your notification information for ${name}!`,
                 s.phone ? undefined : 'Zoom Notifier notification',
             );
+        } else if (s.ifttt) {
+            sendIfttt(s.ifttt, 'Subscription Update', `Updated your notification information for ${name}!`);
         } else {
             await sendText(s.phone, `Updated your notification information for ${name}!`);
         }
@@ -84,6 +88,10 @@ async function addSub(s: Subscription) {
 
 const Sub: NextApiHandler = async (req, res) => {
     const { meetingId } = req.query as Record<string, string>;
+
+    if (req.query.phone === 'null') req.query.phone = null;
+    if (req.query.email === 'null') req.query.email = null;
+    if (req.query.ifttt === 'null') req.query.ifttt = null;
 
     const record = {
         meetingId,

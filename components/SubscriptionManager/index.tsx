@@ -57,7 +57,7 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
         setContactEntered(false);
         setContactOpen(false);
         setNotifyPrefs(null);
-    }, [email, phone, carrier]);
+    }, [email, phone, carrier, ifttt]);
 
     useEffect(() => {
         const phone = window.localStorage.getItem('__ZN_phone');

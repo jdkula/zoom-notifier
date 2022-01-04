@@ -7,6 +7,7 @@ import { sendEmail } from '../../lib/sendEmail';
 import { phoneToEmail } from '~/lib/phone';
 import Axios from 'axios';
 import { sendText } from '~/lib/sendText';
+import sendIfttt from '~/lib/ifttt';
 
 enum Event {
     PARTICIPANT_JOINED = 'meeting.participant_joined',
@@ -39,11 +40,7 @@ async function notifyIfttt(match: Match): Promise<void> {
 
     if (!ifttt) return;
 
-    await Axios.post(`https://maker.ifttt.com/trigger/zoom_notification/with/key/${ifttt}`, {
-        value1: message + (url ? ' Click to join!' : ''),
-        value2: room,
-        ...(url && { value3: url }),
-    });
+    await sendIfttt(ifttt, room, message + (url ? ' Click to join!' : ''), url || undefined);
 }
 
 const eventMapping = {
