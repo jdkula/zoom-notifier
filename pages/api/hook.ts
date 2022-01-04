@@ -5,7 +5,6 @@ import { AuditLog, collections, Setting } from '~/lib/mongo';
 import { sendEmail } from '../../lib/sendEmail';
 
 import { phoneToEmail } from '~/lib/phone';
-import Axios from 'axios';
 import { sendText } from '~/lib/sendText';
 import sendIfttt from '~/lib/ifttt';
 
