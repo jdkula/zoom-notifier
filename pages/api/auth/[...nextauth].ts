@@ -3,6 +3,7 @@ import NextAuth, { NextAuthOptions } from 'next-auth';
 import mongo from '~/lib/mongo';
 
 const options: NextAuthOptions = {
+    secret: process.env.AUTH_SECRET,
     // Configure one or more authentication providers
     providers: [
         {
