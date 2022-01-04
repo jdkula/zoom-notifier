@@ -21,7 +21,6 @@ const options: NextAuthOptions = {
                 url: 'https://zoom.us/oauth/authorize',
                 params: {
                     response_type: 'code',
-                    scope: ['meeting:read', 'user_profile'].join(' '),
                 },
             },
             profileUrl: 'https://api.zoom.us/v2/users/me',
