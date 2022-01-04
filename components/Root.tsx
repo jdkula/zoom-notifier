@@ -1,8 +1,8 @@
-import { AppBar, Box, Button, Link, Toolbar, Typography } from '@material-ui/core';
+import { AppBar, Box, Button, Link, Toolbar, Typography } from '@mui/material';
 import Head from 'next/head';
 import React, { FC } from 'react';
-import styled from 'styled-components';
-import { useSession, signOut, signIn } from 'next-auth/client';
+import styled from '@emotion/styled';
+import { useSession, signOut, signIn } from 'next-auth/react';
 
 const Page = styled.div`
     display: grid;
@@ -14,7 +14,7 @@ const Page = styled.div`
 `;
 
 const Root: FC<{ title?: string }> = ({ children, title }) => {
-    const [session] = useSession();
+    const { data } = useSession();
 
     const doLogOut = () => {
         return signOut();
@@ -38,12 +38,12 @@ const Root: FC<{ title?: string }> = ({ children, title }) => {
                         </Typography>
                     </Link>
                     <Box flexGrow={1} />
-                    {session ? (
-                        <Button variant="contained" onClick={doLogOut}>
+                    {data ? (
+                        <Button variant="outlined" onClick={doLogOut} color="inherit">
                             Log Out
                         </Button>
                     ) : (
-                        <Button variant="contained" onClick={doLogIn}>
+                        <Button variant="outlined" onClick={doLogIn} color="inherit">
                             Log In
                         </Button>
                     )}

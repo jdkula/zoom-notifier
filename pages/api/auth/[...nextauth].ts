@@ -1,8 +1,8 @@
 import { NextApiHandler } from 'next';
-import NextAuth from 'next-auth';
+import NextAuth, { NextAuthOptions } from 'next-auth';
 import mongo from '~/lib/mongo';
 
-const options = {
+const options: NextAuthOptions = {
     // Configure one or more authentication providers
     providers: [
         {
@@ -10,10 +10,19 @@ const options = {
             name: 'Zoom',
             type: 'oauth',
             version: '2.0',
-            scope: ['meeting:read', 'user_profile'],
-            params: { grant_type: 'authorization_code' },
-            accessTokenUrl: 'https://zoom.us/oauth/token',
-            authorizationUrl: 'https://zoom.us/oauth/authorize?response_type=code',
+            token: {
+                url: 'https://zoom.us/oauth/token',
+                params: {
+                    grant_type: 'authorization_code',
+                },
+            },
+            authorization: {
+                url: 'https://zoom.us/oauth/authorize',
+                params: {
+                    response_type: 'code',
+                    scope: ['meeting:read', 'user_profile'].join(' '),
+                },
+            },
             profileUrl: 'https://api.zoom.us/v2/users/me',
             profile: (profile) => ({
                 ...profile,
@@ -26,21 +35,21 @@ const options = {
     ],
 
     callbacks: {
-        jwt: async (token, _, account) => {
+        jwt: async ({ token, account }) => {
             if (account) {
                 await (await mongo)
                     .collection('accounts')
                     .findOneAndUpdate(
                         { _id: account.id },
                         { $set: { refresh_token: account.refreshToken, access_token: account.accessToken } },
-                        { returnOriginal: false, upsert: true },
+                        { returnDocument: 'after', upsert: true },
                     );
                 token.uid = account.id;
             }
             return token;
         },
-        session: async (session, jwt) => {
-            session.uid = jwt.uid;
+        session: async ({ session, token }) => {
+            session.uid = token.uid;
             return session;
         },
     },

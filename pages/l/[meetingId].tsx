@@ -1,5 +1,5 @@
 import React, { ReactElement, useEffect } from 'react';
-import { Card, CircularProgress } from '@material-ui/core';
+import { Card, CircularProgress } from '@mui/material';
 
 import { useSnackbar } from 'notistack';
 import { GetServerSideProps } from 'next';

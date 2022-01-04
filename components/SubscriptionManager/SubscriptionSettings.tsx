@@ -1,4 +1,4 @@
-import { Box, FormControlLabel, Checkbox } from '@material-ui/core';
+import { Box, FormControlLabel, Checkbox } from '@mui/material';
 import React, { FC, useState, useEffect } from 'react';
 import NotifyPrefs from '~/lib/NotifyPrefs';
 

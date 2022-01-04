@@ -3,7 +3,7 @@ import React, { ReactElement } from 'react';
 import { GetServerSideProps } from 'next';
 import { getSettings } from '../../api/[meetingId]/settings';
 import Root from '~/components/Root';
-import { getSession } from 'next-auth/client';
+import { getSession } from 'next-auth/react';
 import zoomApi from '~/lib/zoomApi';
 import SubscriptionManager from '~/components/SubscriptionManager';
 import ZoomMeeting from '~/lib/zoom/ZoomMeeting';
@@ -23,7 +23,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     let meetingDetails: ZoomMeeting = null;
     if (session) {
         try {
-            meetingDetails = await zoomApi(session['uid'], `/meetings/${meetingId}`);
+            meetingDetails = await zoomApi(session['uid'] as string, `/meetings/${meetingId}`);
         } catch (e) {
             // do nothing
         }

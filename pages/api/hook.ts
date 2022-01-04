@@ -1,6 +1,6 @@
 import { NextApiHandler } from 'next';
 import { Match, MessageType, prepareMessages } from '~/lib/messages';
-import { AuditLog, collections, Summary } from '~/lib/mongo';
+import { AuditLog, collections, Setting } from '~/lib/mongo';
 
 import { sendEmail } from '../../lib/sendEmail';
 
@@ -60,7 +60,7 @@ async function updateMeeting(event: Event, meetingId: string, userId: string): P
     const meeting = await db.meetings.findOneAndUpdate(
         { _id: meetingId },
         { [eventMapping[event]]: { participants: userId } },
-        { returnOriginal: true, upsert: true },
+        { returnDocument: 'before', upsert: true },
     );
 
     const participants = meeting.value?.participants ?? [];
@@ -95,7 +95,7 @@ async function notify(
         type = currentParticipants === 0 ? MessageType.END : MessageType.LEAVE;
     }
 
-    const settings = await db.settings.findOne({ meetingId });
+    const settings = (await db.settings.findOne({ meetingId })) as Setting;
     if (!settings) return { summary: [], message_type: type, action: 'error_no_settings' };
     if (settings.lastEventTime >= eventTs) return { summary: [], message_type: type, action: 'error_late_event' }; // ensure no duplicate or out of order vents
     await db.settings.updateOne({ meetingId, lastEventTime: { $lt: eventTs } }, { $set: { lastEventTime: eventTs } });

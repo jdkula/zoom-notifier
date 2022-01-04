@@ -13,7 +13,10 @@
         "statusBar.foreground": "#e7e7e7",
         "statusBarItem.hoverBackground": "#282f25",
         "titleBar.inactiveBackground": "#10130f99",
-        "titleBar.inactiveForeground": "#e7e7e799"
+        "titleBar.inactiveForeground": "#e7e7e799",
+        "sash.hoverBorder": "#282f25",
+        "statusBarItem.remoteBackground": "#10130f",
+        "statusBarItem.remoteForeground": "#e7e7e7"
     },
     "peacock.color": "#10130f"
 }

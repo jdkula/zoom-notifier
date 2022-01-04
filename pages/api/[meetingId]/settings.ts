@@ -1,12 +1,14 @@
 import { NextApiHandler } from 'next';
-import { getSession } from 'next-auth/client';
+import { getSession } from 'next-auth/react';
 import { collections, Setting } from '~/lib/mongo';
 import ZoomMeeting from '~/lib/zoom/ZoomMeeting';
 import zoomApi from '~/lib/zoomApi';
 
 export const getSettings = async (meetingId: string, defaultName?: string, defaultUrl?: string): Promise<Setting> =>
     (
-        await (await collections).settings.findOneAndUpdate(
+        await (
+            await collections
+        ).settings.findOneAndUpdate(
             { meetingId },
             {
                 $setOnInsert: {
@@ -14,7 +16,7 @@ export const getSettings = async (meetingId: string, defaultName?: string, defau
                     url: defaultUrl ?? `https://zoom.us/j/${meetingId}`,
                 },
             },
-            { upsert: true, returnOriginal: false, projection: { _id: 0 } },
+            { upsert: true, returnDocument: 'after', projection: { _id: 0 } },
         )
     ).value;
 
@@ -30,14 +32,15 @@ const Settings: NextApiHandler = async (req, res) => {
         let meetingDetails: ZoomMeeting | null = null;
         if (session) {
             try {
-                meetingDetails = await zoomApi(session['uid'], `/meetings/${meetingId}`);
+                meetingDetails = await zoomApi(session['uid'] as string, `/meetings/${meetingId}`);
             } catch (e) {
                 // do nothing
             }
         }
 
         if (!meetingDetails) {
-            return res.status(401).end('Not authorized to access this meeting');
+            res.status(401).end('Not authorized to access this meeting');
+            return;
         }
 
         const record: Setting = {

@@ -8,8 +8,8 @@ import {
     AccordionDetails,
     Button,
     CircularProgress,
-} from '@material-ui/core';
-import { ExpandMore } from '@material-ui/icons';
+} from '@mui/material';
+import { ExpandMore } from '@mui/icons-material';
 import Axios from 'axios';
 import { useSnackbar } from 'notistack';
 import React, { FC, useEffect, useState } from 'react';

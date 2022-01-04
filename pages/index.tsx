@@ -1,4 +1,4 @@
-import React, { ReactElement, ReactNode, useState } from 'react';
+import React, { FormEventHandler, ReactElement, ReactNode, useState } from 'react';
 import {
     Box,
     Button,
@@ -12,37 +12,38 @@ import {
     ListItemText,
     TextField,
     Typography,
-} from '@material-ui/core';
+} from '@mui/material';
 import Link from 'next/link';
 
 import { useRouter } from 'next/router';
 import Root from '~/components/Root';
-import { Settings as SettingsIcon } from '@material-ui/icons';
+import { Settings as SettingsIcon } from '@mui/icons-material';
 import ZoomMeeting from '~/lib/zoom/ZoomMeeting';
 import useSWR from 'swr';
-import { useSession } from 'next-auth/client';
+import { useSession } from 'next-auth/react';
 
 export default function Index(): ReactElement {
     const router = useRouter();
     const [meeting, setMeeting] = useState('');
     const [working, setWorking] = useState(false);
 
-    const [session] = useSession();
+    const { data: session } = useSession();
     const { data: meetings, error } = useSWR<ZoomMeeting[] | null>('/api/zoom/meetings');
 
-    const go = () => {
+    const go: FormEventHandler = (e) => {
+        e.preventDefault();
         setWorking(true);
-        router.push(`/meeting/${meeting}`);
+        router.push('/meeting/[meetingId]', `/meeting/${meeting}`);
     };
 
     const meetingList = meetings?.map((meeting) => (
-        <Link href={`/meeting/${meeting.id}`} key={meeting.uuid}>
+        <Link href={`/meeting/${meeting.id}`} key={meeting.uuid} passHref>
             <ListItem button onClick={() => setWorking(true)}>
                 <ListItemText primary={meeting.topic} secondary={meeting.id} />
                 <Box m={1} />
                 <ListItemSecondaryAction>
-                    <Link href={`/meeting/${meeting.id}/settings`}>
-                        <IconButton edge="end" onClick={() => setWorking(true)}>
+                    <Link href={`/meeting/${meeting.id}/settings`} passHref>
+                        <IconButton edge="end" onClick={() => setWorking(true)} size="large">
                             <SettingsIcon />
                         </IconButton>
                     </Link>

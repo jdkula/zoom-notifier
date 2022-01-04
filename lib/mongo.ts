@@ -1,9 +1,9 @@
 import { MongoClient } from 'mongodb';
 import NotifyPrefs from './NotifyPrefs';
 import CarrierMappings from '~/lib/carriers.json';
-import { Match, MessageType } from './messages';
+import { Match } from './messages';
 
-const client = new MongoClient(process.env.MONGO_URL, { useNewUrlParser: true, useUnifiedTopology: true });
+const client = new MongoClient(process.env.MONGO_URL ?? '');
 
 const mongo = client.connect().then((mongo) => mongo.db('zoomnotifier'));
 mongo.then((db) =>
