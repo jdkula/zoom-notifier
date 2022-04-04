@@ -1,36 +1,16 @@
 import { NextApiHandler } from 'next';
 import NextAuth, { NextAuthOptions } from 'next-auth';
+import ZoomProvider from 'next-auth/providers/zoom';
 import mongo from '~/lib/mongo';
 
 const options: NextAuthOptions = {
     secret: process.env.AUTH_SECRET,
     // Configure one or more authentication providers
     providers: [
-        {
-            id: 'zoom',
-            name: 'Zoom',
-            type: 'oauth',
-            version: '2.0',
-            token: {
-                url: 'https://zoom.us/oauth/token',
-                params: {
-                    grant_type: 'authorization_code',
-                },
-            },
-            authorization: {
-                url: 'https://zoom.us/oauth/authorize',
-                params: {
-                    response_type: 'code',
-                },
-            },
-            profileUrl: 'https://api.zoom.us/v2/users/me',
-            profile: (profile) => ({
-                ...profile,
-                name: profile.first_name + ' ' + profile.last_name,
-            }),
+        ZoomProvider({
             clientId: process.env.ZOOM_OAUTH_ID,
             clientSecret: process.env.ZOOM_OAUTH_SECRET,
-        },
+        }),
         // ...add more providers here
     ],
 
