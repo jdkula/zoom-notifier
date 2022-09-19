@@ -1,0 +1,4 @@
+steps:
+  - block: ":rocket: Ready to release?"
+  - command: "docker buildx build --platform linux/arm64,linux/amd64,linux/arm/v7,linux/arm/v6 -t jdkula/zoom-notifier:latest -t jdkula/zoom-notifier:stable -t jdkula/zoom-notifier:latest -t jdkula/zoom-notifier:$$(echo -n $$BUILDKITE_TAG | cut -c 9-) -t jdkula/zoom-notifier:dev -t jdkula/zoom-notifier:$$BUILDKITE_COMMIT -t jdkula/zoom-notifier:main --push ."
+    label: ":rocket: :nextjs: Release"
