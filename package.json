@@ -40,15 +40,14 @@
         "reflect-metadata": "^0.1.13",
         "swr": "^1.1.2",
         "twilio": "^3.66.1",
-        "web-push": "^3.4.4",
-        "worker-loader": "^3.0.8"
+        "web-push": "^3.4.4"
     },
     "devDependencies": {
         "@types/node": "^17.0.7",
         "@types/react": "^17.0.0",
         "@typescript-eslint/eslint-plugin": "^5.9.0",
         "@typescript-eslint/parser": "^5.9.0",
-        "babel-plugin-module-resolver": "^4.0.0",
+        "babel-plugin-module-resolver": "^5.0.0",
         "cross-env": "^7.0.2",
         "eslint": "^8.6.0",
         "eslint-config-prettier": "^8.3.0",
