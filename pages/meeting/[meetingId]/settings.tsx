@@ -144,10 +144,6 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
         }
     }
 
-    if (!meetingDetails) {
-        return { props: { meetingId, access: false } };
-    }
-
     const settings = await getSettings(meetingId, meetingDetails?.topic, meetingDetails?.join_url);
 
     return {

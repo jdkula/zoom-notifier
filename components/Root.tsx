@@ -20,10 +20,6 @@ const Root: FC<{ title?: string }> = ({ children, title }) => {
         return signOut();
     };
 
-    const doLogIn = () => {
-        return signIn('zoom');
-    };
-
     return (
         <Box height="100%" display="flex" flexDirection="column">
             <Head>
@@ -42,11 +38,7 @@ const Root: FC<{ title?: string }> = ({ children, title }) => {
                         <Button variant="outlined" onClick={doLogOut} color="inherit">
                             Log Out
                         </Button>
-                    ) : (
-                        <Button variant="outlined" onClick={doLogIn} color="inherit">
-                            Log In
-                        </Button>
-                    )}
+                    ) : null}
                 </Toolbar>
             </AppBar>
             <Box m={2} />

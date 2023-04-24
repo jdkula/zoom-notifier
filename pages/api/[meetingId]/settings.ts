@@ -27,22 +27,6 @@ const Settings: NextApiHandler = async (req, res) => {
     if (req.method === 'GET') {
         res.send(await getSettings(meetingId as string));
     } else if (req.method === 'PUT') {
-        const session = await getSession({ req });
-
-        let meetingDetails: ZoomMeeting | null = null;
-        if (session) {
-            try {
-                meetingDetails = await zoomApi(session['uid'] as string, `/meetings/${meetingId}`);
-            } catch (e) {
-                // do nothing
-            }
-        }
-
-        if (!meetingDetails) {
-            res.status(401).end('Not authorized to access this meeting');
-            return;
-        }
-
         const record: Setting = {
             meetingId: meetingId,
             name: req.body.name,
