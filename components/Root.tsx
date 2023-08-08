@@ -1,8 +1,8 @@
 import { AppBar, Box, Button, Link, Toolbar, Typography } from '@mui/material';
 import Head from 'next/head';
-import React, { FC } from 'react';
+import React, { FC, ReactNode } from 'react';
 import styled from '@emotion/styled';
-import { useSession, signOut, signIn } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 
 const Page = styled.div`
     display: grid;
@@ -13,7 +13,7 @@ const Page = styled.div`
     flex-grow: 1;
 `;
 
-const Root: FC<{ title?: string }> = ({ children, title }) => {
+const Root: FC<{ title?: string; children: ReactNode }> = ({ children, title }) => {
     const { data } = useSession();
 
     const doLogOut = () => {

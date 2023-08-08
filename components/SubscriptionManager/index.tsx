@@ -16,40 +16,23 @@ import React, { FC, useEffect, useState } from 'react';
 import NotifyPrefs from '~/lib/NotifyPrefs';
 import ContactInformation from './ContactInformation';
 import SubscriptionSettings from './SubscriptionSettings';
-import { phoneToEmail } from '~/lib/phone';
 import { Subscription } from '~/lib/mongo';
-import { PhoneNumberUtil } from 'google-libphonenumber';
-// Grabbed from https://support.myovision.com/help/ttm-carriers, converted with https://www.convertjson.com/html-table-to-json.htm
-import CarrierMappings from '~/lib/carriers.json';
-
-const phoneUtil = PhoneNumberUtil.getInstance();
-
-const carrierOptions = Object.keys(CarrierMappings);
 
 const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingId }) => {
     const { enqueueSnackbar } = useSnackbar();
-    const [email, setEmail] = useState<string | null>(null);
-    const [phone, setPhone] = useState<string | null>(null);
-    const [carrier, setCarrier] = useState<string | null>(null);
     const [ifttt, setIfttt] = useState<string | null>(null);
-    const [selection, setSelection] = useState<'phone' | 'email' | 'ifttt' | null>(null);
 
     const [contactOpen, setContactOpen] = useState(false);
     const [contactEntered, setContactEntered] = useState(false);
-    const hasContactInformation = !!email || (!!phone && !!carrier) || !!ifttt;
+    const hasContactInformation = !!ifttt;
 
     const [newSub, setNewSub] = useState(true);
     const [notifyPrefs, setNotifyPrefs] = useState<NotifyPrefs | null>(null);
     const [working, setWorking] = useState(false);
 
-    const preloadContactInfo = (
-        email: string | null,
-        phone: string | null,
-        carrier: string | null,
-        ifttt: string | null,
-    ) => {
-        if (email || (phone && carrier) || ifttt) {
-            getSubInfo(email, phone, carrier, ifttt);
+    const preloadContactInfo = (ifttt: string | null) => {
+        if (ifttt) {
+            getSubInfo(ifttt);
         }
     };
 
@@ -57,70 +40,23 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
         setContactEntered(false);
         setContactOpen(false);
         setNotifyPrefs(null);
-    }, [email, phone, carrier, ifttt]);
+    }, [ifttt]);
 
     useEffect(() => {
-        const phone = window.localStorage.getItem('__ZN_phone');
-        const carrier = window.localStorage.getItem('__ZN_carrier');
-        const email = window.localStorage.getItem('__ZN_email');
         const ifttt = window.localStorage.getItem('__ZN_ifttt');
-        const selection = window.localStorage.getItem('__ZN_selection');
-        setPhone(phone ?? '');
-        if (carrierOptions.includes(carrier)) {
-            setCarrier(carrier);
-        }
-        setEmail(email ?? '');
-
-        if (selection) {
-            setSelection(selection as 'phone' | 'email' | 'ifttt');
-        }
-
-        if (selection === 'phone') {
-            try {
-                if (
-                    carrierOptions.includes(carrier) &&
-                    phone.length === 10 &&
-                    phoneUtil.isValidNumberForRegion(phoneUtil.parse(phone, 'US'), 'US')
-                ) {
-                    setPhone(phone);
-                    setCarrier(carrier);
-                    setEmail(email);
-                    setIfttt(ifttt);
-                    preloadContactInfo(email, phone, carrier, ifttt);
-                }
-            } catch (e) {
-                // do nothing
-            }
-        } else if (selection === 'email') {
-            setPhone(null);
-            setCarrier(null);
-            setEmail(email);
-            setIfttt(null);
-            preloadContactInfo(email, phone, carrier, ifttt);
-        } else if (selection === 'ifttt') {
-            setPhone(null);
-            setCarrier(null);
-            setEmail(null);
-            setIfttt(ifttt);
-            preloadContactInfo(email, phone, carrier, ifttt);
+        if (ifttt) {
+            preloadContactInfo(ifttt);
         }
     }, []);
 
     useEffect(() => {
-        window.localStorage.setItem('__ZN_phone', phone);
-        window.localStorage.setItem('__ZN_carrier', carrier);
-        window.localStorage.setItem('__ZN_email', email);
         window.localStorage.setItem('__ZN_ifttt', ifttt);
-        window.localStorage.setItem('__ZN_selection', selection);
-    }, [phone, email, carrier, ifttt, selection]);
+    }, [ifttt]);
 
     const subscribe = async () => {
         setWorking(true);
         try {
             await Axios.post(`/api/${meetingId}/sub`, {
-                email,
-                phone,
-                carrier,
                 ifttt,
                 ...notifyPrefs,
             } as Subscription);
@@ -136,7 +72,7 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
     const unsubscribe = async () => {
         setWorking(true);
         try {
-            await Axios.delete(`/api/${meetingId}/sub`, { data: { email, phone, carrier, ifttt } });
+            await Axios.delete(`/api/${meetingId}/sub`, { data: { ifttt } });
             enqueueSnackbar('Unsubscribed!', { variant: 'success' });
             setNewSub(true);
             setContactEntered(false);
@@ -149,10 +85,10 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
         }
     };
 
-    const getSubInfo = async (email, phone, carrier, ifttt, cont = true) => {
+    const getSubInfo = async (ifttt, cont = true) => {
         setWorking(true);
         try {
-            const { data } = await Axios.get(`/api/${meetingId}/sub`, { params: { email, phone, carrier, ifttt } });
+            const { data } = await Axios.get(`/api/${meetingId}/sub`, { params: { ifttt } });
 
             setNotifyPrefs(data);
             setNewSub(false);
@@ -174,11 +110,7 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
     };
 
     let subtitle: string;
-    if (contactEntered && phone && carrier) {
-        subtitle = phoneToEmail(phone, carrier);
-    } else if (contactEntered && email) {
-        subtitle = email;
-    } else if (contactEntered && ifttt) {
+    if (contactEntered && ifttt) {
         subtitle = 'IFTTT Key: ' + ifttt;
     } else {
         subtitle = 'Enter your contact information below.';
@@ -205,16 +137,8 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
                     <AccordionDetails>
                         <ContactInformation
                             {...{
-                                setEmail,
-                                setPhone,
-                                setCarrier,
                                 setIfttt,
-                                setSelection,
-                                selection,
-                                carrier,
-                                email,
                                 ifttt,
-                                phone,
                             }}
                         />
                     </AccordionDetails>
@@ -260,7 +184,7 @@ const SubscriptionManager: FC<{ meetingId: string; name: string }> = ({ meetingI
                         variant="contained"
                         color="primary"
                         disabled={!hasContactInformation}
-                        onClick={() => getSubInfo(email, phone, carrier, ifttt)}
+                        onClick={() => getSubInfo(ifttt)}
                         fullWidth
                     >
                         Continue

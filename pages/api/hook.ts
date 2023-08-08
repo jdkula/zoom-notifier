@@ -2,36 +2,11 @@ import { NextApiHandler } from 'next';
 import { Match, MessageType, prepareMessages } from '~/lib/messages';
 import { AuditLog, collections, Setting } from '~/lib/mongo';
 
-import { sendEmail } from '../../lib/sendEmail';
-
-import { phoneToEmail } from '~/lib/phone';
-import { sendText } from '~/lib/sendText';
 import sendIfttt from '~/lib/ifttt';
 
 enum Event {
     PARTICIPANT_JOINED = 'meeting.participant_joined',
     PARTICIPANT_LEFT = 'meeting.participant_left',
-}
-
-function prepareEmail(match: Match): [to: string, message: string, subject: string | undefined] | null {
-    const { email, message, phone, carrier, url } = match;
-    if (phone || carrier || !email) return null;
-
-    const to = email ?? phoneToEmail(phone, carrier);
-    const subject = phone ? undefined : message;
-
-    const messageWithJoin = match.url ? `${message} Join at: ${url}` : message;
-
-    return [to, messageWithJoin, subject];
-}
-
-function prepareText(match: Match): [to: string, message: string] {
-    const { email, message, phone, url } = match;
-    if (!phone || email) return null;
-
-    const messageWithJoin = match.url ? `${message} Join at: ${url}` : message;
-
-    return [phone, messageWithJoin];
 }
 
 async function notifyIfttt(match: Match): Promise<void> {
@@ -97,20 +72,9 @@ async function notify(
     await db.settings.updateOne({ meetingId, lastEventTime: { $lt: eventTs } }, { $set: { lastEventTime: eventTs } });
 
     const messages = await prepareMessages(type, settings, name, currentParticipants);
-    const textPromises = messages
-        .map(prepareText)
-        .filter((text) => text !== null)
-        .map((args) => sendText(...args));
-
-    const emailPromises = messages
-        .map(prepareEmail)
-        .filter((email) => email !== null)
-        .map((args) => sendEmail(...args));
 
     const iftttPromises = messages.filter((match) => !!match.ifttt).map(notifyIfttt);
 
-    await Promise.all(textPromises);
-    await Promise.all(emailPromises);
     await Promise.all(iftttPromises);
 
     return { summary: messages, message_type: type, action: 'messages_sent' };

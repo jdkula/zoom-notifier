@@ -1,8 +1,5 @@
 import { NextApiHandler } from 'next';
-import { getSession } from 'next-auth/react';
 import { collections, Setting } from '~/lib/mongo';
-import ZoomMeeting from '~/lib/zoom/ZoomMeeting';
-import zoomApi from '~/lib/zoomApi';
 
 export const getSettings = async (meetingId: string, defaultName?: string, defaultUrl?: string): Promise<Setting> =>
     (
